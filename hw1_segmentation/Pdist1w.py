@@ -1,5 +1,5 @@
-#the class for doing the dictionary operations.
-class Pdist(dict):
+#the class for doing the dictionary operations for unigram.
+class Pdist1w(dict):
     "A probability distribution estimated from counts in datafile."
 
     def __init__(self, filename, sep='\t', N=None, missingfn=None):
