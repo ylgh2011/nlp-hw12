@@ -16,7 +16,7 @@ from math import log
 old = sys.stdout
 sys.stdout = codecs.lookup('utf-8')[-1](sys.stdout)
 
-P1w = Pdist1w(opts.counts1w)
+P1w = Pdist1w(opts.counts1w, singleCharIgnore = 7)
 P2w = Pdist2w(opts.counts2w)
 Pm = Pdist1w(opts.countsmark)
 sumN = P1w.N + P2w.N + Pm.N
@@ -96,6 +96,7 @@ with open(opts.input) as f:
                         maxWord = utf8line[maxEnt + 1:index + 1] 
                         inDict = True
 
+#Connect the characters that are not in the dictionarys together
             if (inDict is False):
                 maxEnt = -1
                 maxWord = utf8line[:index + 1]
