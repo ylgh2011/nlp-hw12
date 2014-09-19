@@ -54,7 +54,6 @@ class Entry:
 
 def main():
     unigram = Pdist(opts.counts1w)
-    bigram = Pdist(opts.counts2w)
 
     # substitute output
     old_output = sys.stdout
