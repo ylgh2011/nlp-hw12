@@ -1,5 +1,5 @@
 #the class for doing the dictionary operations for unigram.
-class Pdist1w(dict):
+class Pdist(dict):
     "A probability distribution estimated from counts in datafile."
 
     def __init__(self, filename, sep='\t', N=None, singleCharIgnore = 0):
@@ -17,8 +17,8 @@ class Pdist1w(dict):
         self.singleCharIgnore = singleCharIgnore
 
     def __call__(self, key):
-        if key in self:
-            if ((len(key) > 1) or (self[key] > self.singleCharIgnore) ):
-                return float(self[key])/float(self.N)
-        #else: return self.missingfn(key, self.N)
+        if (key in self) and ( (len(key) > 1) or (self[key] > self.singleCharIgnore) ):
+            return float(self[key]) / float(self.N)
+        # elif len(key) == 1:
+        #     return 1.0 / float(self.N)
         else: return None

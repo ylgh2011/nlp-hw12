@@ -14,3 +14,5 @@ class Entry:
             preEntry = preEntry.backPnt
         outString = preEntry.word + outString
         return outString
+    def __str__(self):
+        return '(word: ' + self.word + ', logP: ' + str(self.logP) + ')'
