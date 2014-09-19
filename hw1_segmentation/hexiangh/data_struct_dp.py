@@ -1,12 +1,11 @@
 import sys, codecs, optparse, os
 import operator
 
-class Pdist(dict):
+class bPdist(dict):
     "The distribution function over given algorithm"
 
-    def __init__(self, bigram, penalty = 0.2, sep = '\t', N = None, missingfn = None):
+    def __init__(self, bigram, sep = '\t', N = None, missingfn = None):
         self.maxlen = 0
-        self.penalty = penalty
         # Model example { "key_1":{ "key_2": 1, "key_3": 2}}
         # Construct unigram probability distribution
         for line in file(bigram):
@@ -22,35 +21,31 @@ class Pdist(dict):
             # if this entry is not created, create it
             if self.get(utf8cond, None) is None:
                 self[utf8cond] = dict()
-            self[utf8cond][utf8key] = self[utf8cond].get(utf8key, 0) + float(freq) #- penalty
+            self[utf8cond][utf8key] = self[utf8cond].get(utf8key, 0) + float(freq)
             self.maxlen = max(len(utf8key), len(utf8cond), self.maxlen)
 
-        # for val in self.values():
+#        for vals in self.values():
+#            vals_cnt = len(vals)
+#            penaulty = 0.1 / vals_cnt
+#            for key in vals.keys():
+#                vals[key] = vals[key] - penaulty
+#            vals.update({'Unknown':0.1})
+
             
 
 
-        self.N = float(N or sum([i for vals in self.values() for i in vals.values()]))
+        # self.N = float(N or sum([i for vals in self.values() for i in vals.values()]))
         self.missingfn = missingfn or (lambda k, N: 1./N)
 
-    def __call__(self, cond, key = None):
-        if key:
-            # Return bigram possibility
-            if cond in self.keys():
-                if key in self[cond]:
-                    return float(self[cond][key])/float(self.N)
-            else:
-                return None
-
-            pass
+    def __call__(self, cond, key):
+        # Return bigram possibility
+        if cond in self.keys():
+            if key in self[cond].keys():
+                return float(self[cond][key])/float(len(self[cond].values()))
         else:
-            # Return unigram possibility
-            if cond in self.keys():
-                return float(sum(x for x in self[cond].values()))/float(self.N)
-            elif len(cond) == 1:
-                return self.missingfn(cond, self.N)
-            else:
-                return None
+            return None
 
+"""
     def show(self):
         outstr = ""
         for (key, vals) in self.items():
@@ -59,8 +54,10 @@ class Pdist(dict):
                 outstr = outstr + subkey + " : " + str(subval) + " "
             outstr = outstr + "] = " + str(sum(x for x in vals.values()))+ " }\n"
         return outstr
+"""
 
-""" Distribution for unigram alone
+class uPdist(dict):
+    # Distribution for unigram alone
     def __init__(self, filename, sep = '\t', N = None, missingfn = None):
         self.maxlen = 0
         for line in file(filename):
@@ -80,7 +77,7 @@ class Pdist(dict):
             return self.missingfn(key, self.N)
         else:
             return None
-"""
+
 
 class Entry:
     def __init__(self, word, log_prob, prev = None):

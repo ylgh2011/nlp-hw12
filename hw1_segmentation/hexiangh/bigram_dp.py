@@ -3,7 +3,7 @@ from heapq import heappush, heappop
 import sys, codecs, optparse, os
 import operator
 
-from data_struct_dp import Entry,Pdist
+from data_struct_dp import Entry, uPdist, bPdist
 
 
 optparser = optparse.OptionParser()
@@ -14,7 +14,8 @@ optparser.add_option("-i", "--inputfile", dest="input", default=os.path.join('da
 
 
 def main():
-    Dist = Pdist(opts.counts2w)
+    bDist = bPdist(opts.counts2w)
+    uDist = uPdist(opts.counts1w)
 
     # substitute output
     old_output = sys.stdout
@@ -34,7 +35,7 @@ def main():
                 opt[i] = None
 
             for end_pos in range(len(sentence)):
-                start_pos = max(0, end_pos - Dist.maxlen)
+                start_pos = max(0, end_pos - bDist.maxlen)
                 opt_start = 0
                 opt_prob = - 9999999999
                 for alt_start in range(start_pos, end_pos + 1):
@@ -50,16 +51,13 @@ def main():
                     elif opt[last_end]:
                         pre_word = opt[last_end].word
                         pre_prob = opt[last_end].log_prob
-                    else:
-                        pre_word = 'Unknown'
-                        pre_prob = 0
 
                     # First try to match bigram, if failed, try match unigram
-                    if Dist(pre_word, word):
-                        prob = log(Dist(pre_word, word))
+                    if bDist(pre_word, word):
+                        prob = log(bDist(pre_word, word))
                     else:
-                        if Dist(word):
-                            prob = log(Dist(word) * 0.01)# Dist(pre_word,))
+                        if uDist(word):
+                            prob = log(uDist(word) * 0.001)
                         else:
                             prob = - 9999999999
 
