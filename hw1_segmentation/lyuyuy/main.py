@@ -15,7 +15,8 @@ from math import log
 old = sys.stdout
 sys.stdout = codecs.lookup('utf-8')[-1](sys.stdout)
 
-P1w = Pdist(filename = opts.counts1w, singleCharIgnore = int(sys.argv[1]), doubleCharIgnore = int(sys.argv[2]))
+# P1w = Pdist(filename = opts.counts1w, singleCharIgnore = int(sys.argv[1]), doubleCharIgnore = int(sys.argv[2]))
+P1w = Pdist(filename = opts.counts1w, singleCharIgnore = 36, doubleCharIgnore = 0)
 P2w = Pdist(filename = opts.counts2w)
 P2wFirstWordOnly = Pdist(filename = opts.counts2w, firstWordOnly = True)
 
