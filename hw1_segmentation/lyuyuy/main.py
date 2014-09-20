@@ -15,8 +15,9 @@ from math import log
 old = sys.stdout
 sys.stdout = codecs.lookup('utf-8')[-1](sys.stdout)
 
-P1w = Pdist(opts.counts1w, singleCharIgnore = 7)
-P2w = Pdist(opts.counts2w)
+P1w = Pdist(filename = opts.counts1w, singleCharIgnore = int(sys.argv[1]), doubleCharIgnore = int(sys.argv[2]))
+P2w = Pdist(filename = opts.counts2w)
+P2wFirstWordOnly = Pdist(filename = opts.counts2w, firstWordOnly = True)
 
 # Pm = Pdist(opts.countsmark)
 # sumN = P1w.N + P2w.N + Pm.N
@@ -30,7 +31,10 @@ with open(opts.input) as f:
             maxSum = float('-Inf')
             maxEnt = -1
             maxWord = None
+
             inDict = False
+            isNum = False
+            isCharNum = False
 
 #Do the gram match
             if inDict is False:
@@ -46,6 +50,9 @@ with open(opts.input) as f:
                     P_A = P1w(wordA)                # P(B)
                     if P_AB is not None:
                         log_P_B_base_A = log(P_AB) - (log(P_A) if P_A is not None else 0)
+                        # countA = P2wFirstWordOnly.getCount(wordA)
+                        # countAB = P2w.getCount(wordA + ' ' + wordB)
+                        # log_P_B_base_A = log(float(countAB) / float(countA)) if P_A is not None else 0
                     else:
                         p1_wordB = P1w(wordB)
                         log_P_B_base_A = log(p1_wordB) if p1_wordB is not None else float('-Inf')
@@ -60,22 +67,44 @@ with open(opts.input) as f:
                     if (P1w(wordB) is not None) or (P2w(wordA + ' ' + wordB) is not None):
                         inDict = True
 
-#Connect the characters that are not in the dictionarys together
+#Connect the characters that are not in the dictionaries
             if inDict is False:
                 maxEnt = -1
                 maxWord = utf8line[:index + 1]
-                maxSum = len(maxWord) * log(1./P1w.N)
+                maxSum = len(maxWord) * log(1.0/P1w.N)
                 for i in range(index - 1, -1, -1):
                     if entryList[i].inDict:
                         maxEnt = i
                         maxWord = utf8line[i + 1:index + 1]
-                        maxSum = entryList[i].logP + len(maxWord) * log(1./P1w.N)
+                        maxSum = entryList[i].logP + len(maxWord) * log(1.0/P1w.N)
                         break
 
+#Connect consecutive numbers
+            index_char = utf8line[index].encode('utf-8')
+            isNum = Pdist.isNumber(index_char)
+            isCharNum = Pdist.isCharNumber(index_char)
+            isDot = Pdist.isDot(index_char)
+            if isNum or (isCharNum and (not inDict)) or isDot:
+                if isDot and (not inDict):
+                    isNum = True
+                if isNum:
+                    inDict = True if not isDot else inDict
+                maxEnt = -1
+                maxWord = utf8line[:index + 1]
+                maxSum = len(maxWord) * log(1.0/P1w.N)
+                for i in range(index - 1, -1, -1):
+                    if not entryList[i].isNum:
+                        maxEnt = i
+                        maxWord = utf8line[i + 1:index + 1]
+                        maxSum = entryList[i].logP + len(maxWord) * log(1.0/P1w.N)
+                        break
+
+
+
             if maxEnt >= 0:
-                entryList.append(Entry(maxWord, maxSum, entryList[maxEnt], inDict))
+                entryList.append(Entry(maxWord, maxSum, entryList[maxEnt], inDict, isNum, isCharNum))
             else:
-                entryList.append(Entry(maxWord, maxSum, None, inDict))
+                entryList.append(Entry(maxWord, maxSum, None, inDict, isNum, isCharNum))
 
         print Entry.rollback(entryList[len(utf8line) - 1])
 
