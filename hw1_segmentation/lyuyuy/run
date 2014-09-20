@@ -1,6 +1,6 @@
 if [ -f $1.py ];
 then
-    python $1.py $2 $3 > output
+    python $1.py > output
 	python score-segments.py -t output
 	python compareLines.py
 else
