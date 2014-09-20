@@ -9,7 +9,7 @@ class Entry:
         self.isUnitNum = isUnitNum
         self.isChNum = isChNum
     def __str__(self):
-        return '(word: ' + self.word + ', logP: ' + str(self.logP) + ', inDict:' + str(self.inDict) + ', isNum:' + str(self.isNum) + ', isCharNum:' + str(self.isCharNum) + ')'
+        return '(word: ' + self.word + ', logP: ' + str(self.logP) + ', inDict:' + str(self.inDict) + ', isNum:' + str(self.isNum) + ', isUnitNum:' + str(self.isUnitNum) + ')'
 
     @staticmethod
     def rollback(firstEntry):

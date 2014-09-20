@@ -66,6 +66,7 @@ with open(opts.input) as f:
                         maxEnt = i - 1
                         maxWord = utf8line[maxEnt + 1:index + 1]
                     if (P1w(wordB) is not None) or (P2w(wordA + ' ' + wordB) is not None):
+                    # if P1w(wordB) is not None:
                         inDict = True
 
 #Connect the characters that are not in the dictionaries
