@@ -35,10 +35,10 @@ with open(opts.input) as f:
 
             inDict = False
             isNum = False
-            isCharNum = False
+            isUnitNum = False
 
 #Do the gram match
-            if inDict is False:
+            if not inDict:
                 headEntry = index - max(P1w.maxlen, P2w.maxlen)
                 if (headEntry < 0):
                     headEntry = 0
@@ -83,9 +83,12 @@ with open(opts.input) as f:
 #Connect consecutive numbers
             index_char = utf8line[index].encode('utf-8')
             isNum = Pdist.isNumber(index_char)
-            isCharNum = Pdist.isCharNumber(index_char)
+            isUnitNum = Pdist.isUnitNumber(index_char)
             isDot = Pdist.isDot(index_char)
-            if isNum or (isCharNum and (not inDict)) or isDot:
+            # isChNum = Pdist.isChNumber(index_char)
+            isChNum = False
+
+            if isNum or (isUnitNum and (not inDict)) or isDot:
                 if isDot and (not inDict):
                     isNum = True
                 if isNum:
@@ -100,12 +103,17 @@ with open(opts.input) as f:
                         maxSum = entryList[i].logP + len(maxWord) * log(1.0/P1w.N)
                         break
 
+            # if isChNum and index > 0 and (entryList[index - 1].isChNum or Pdist.isTh(utf8line[index - 1].encode('utf-8'))):
+            #     maxEnt = index - 1 - len(entryList[index - 1].word)
+            #     maxWord = utf8line[maxEnt + 1 : index + 1]
+            #     maxSum = entryList[maxEnt].logP + len(maxWord) * log(1.0/P1w.N)
+
 
 
             if maxEnt >= 0:
-                entryList.append(Entry(maxWord, maxSum, entryList[maxEnt], inDict, isNum, isCharNum))
+                entryList.append(Entry(maxWord, maxSum, entryList[maxEnt], inDict, isNum, isUnitNum, isChNum))
             else:
-                entryList.append(Entry(maxWord, maxSum, None, inDict, isNum, isCharNum))
+                entryList.append(Entry(maxWord, maxSum, None, inDict, isNum, isUnitNum, isChNum))
 
         print Entry.rollback(entryList[len(utf8line) - 1])
 

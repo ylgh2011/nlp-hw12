@@ -39,22 +39,38 @@ class Pdist(dict):
 
     @staticmethod
     def isNumber(c):
-        numList = ['\xef\xbc\x90', '\xef\xbc\x91', '\xef\xbc\x92', '\xef\xbc\x93', '\xef\xbc\x94', '\xef\xbc\x95', '\xef\xbc\x96', '\xef\xbc\x97', '\xef\xbc\x98', '\xef\xbc\x99']
-        for item in numList:
+        lst = ['\xef\xbc\x90', '\xef\xbc\x91', '\xef\xbc\x92', '\xef\xbc\x93', '\xef\xbc\x94', '\xef\xbc\x95', '\xef\xbc\x96', '\xef\xbc\x97', '\xef\xbc\x98', '\xef\xbc\x99']
+        for item in lst:
             if item.decode('utf-8') == c.decode('utf-8'):
                 return True
         return False
 
     @staticmethod
-    def isCharNumber(c):
-        charNumList = ['\xe5\xb9\xb4', '\xe5\xb9\xb4', '\xe6\x9c\x88', '\xe6\x97\xa5', '\xe7\x99\xbe', '\xe5\x8d\x83', '\xe4\xb8\x87']
-        for item in charNumList:
+    def isUnitNumber(c):
+        lst = ['\xe5\xb9\xb4', '\xe5\xb9\xb4', '\xe6\x9c\x88', '\xe6\x97\xa5', '\xe7\x99\xbe', '\xe5\x8d\x83', '\xe4\xb8\x87', '\xe5\xa4\x9a']
+        for item in lst:
             if item.decode('utf-8') == c.decode('utf-8'):
                 return True
         return False
 
     @staticmethod
     def isDot(c):
-        return '\xc2\xb7'.decode('utf-8') == c.decode('utf-8')
+        lst = ['\xef\xbc\x8e', '\xc2\xb7']
+        for item in lst:
+            if item.decode('utf-8') == c.decode('utf-8'):
+                return True
+        return False
+
+    # @staticmethod
+    # def isChNumber(c):
+    #     lst = ['\xe4\xb8\x80', '\xe4\xba\x8c', '\xe4\xb8\x89', '\xe5\x9b\x9b', '\xe4\xba\x94', '\xe5\x85\xad', '\xe4\xb8\x83', '\xe5\x85\xab', '\xe4\xb9\x9d', '\xe5\x8d\x81']
+    #     for item in lst:
+    #         if item.decode('utf-8') == c.decode('utf-8'):
+    #             return True
+    #     return False
+
+    # @staticmethod
+    # def isTh(c):
+    #     return '\xe7\xac\xac'.decode('utf-8') == c.decode('utf-8')
 
 
