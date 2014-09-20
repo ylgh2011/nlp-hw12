@@ -1,6 +1,8 @@
 if [ -f $1.py ];
 then
-    python $1.py | python score-segments.py
+    python $1.py > output
+	python score-segments.py -t output
+	python compareLines.py
 else
    echo "usage: run <python-program>"
 fi
