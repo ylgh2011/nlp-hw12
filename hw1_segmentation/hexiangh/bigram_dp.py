@@ -1,10 +1,8 @@
 from math import log
-from heapq import heappush, heappop
 import sys, codecs, optparse, os
 import operator
 
 from data_struct_dp import Entry, uPdist, bPdist
-
 
 optparser = optparse.OptionParser()
 optparser.add_option("-c", "--unigramcounts", dest='counts1w', default=os.path.join('data', 'count_1w.txt'), help="unigram counts")
@@ -12,6 +10,12 @@ optparser.add_option("-b", "--bigramcounts", dest='counts2w', default=os.path.jo
 optparser.add_option("-i", "--inputfile", dest="input", default=os.path.join('data', 'input'), help="input file to segment")
 (opts, _) = optparser.parse_args()
 
+
+unicode_unit_connect_digit = [u'\u5e74', u'\u6708', u'\u65e5', u'\u4e07']
+# stands for 'nian', 'yue', 'ri', 'wan'
+unicode_digit = [u'\uff11',u'\uff12',u'\uff13',u'\uff14',u'\uff15',u'\uff16',u'\uff17',u'\uff18',u'\uff19',u'\uff10']
+
+debug = False
 
 def main():
     bDist = bPdist(opts.counts2w)
@@ -38,6 +42,7 @@ def main():
                 start_pos = max(0, end_pos - bDist.maxlen)
                 opt_start = 0
                 opt_prob = - 9999999999
+                is_in_dict = False
                 for alt_start in range(start_pos, end_pos + 1):
 
                     # calc last dp table entry index
@@ -69,21 +74,44 @@ def main():
                     if prob + pre_prob > opt_prob:
                         opt_start = alt_start
                         opt_prob = prob + pre_prob
+                    
+                    if debug:
+                        print word, "|", pre_word , ",",alt_start,"-",end_pos + 1,", ",prob, ", last end:", last_end, "opt end:", opt_start, "opt prob:", opt_prob
 
-                    # print word, "|", pre_word , ",",alt_start,"-",end_pos + 1,", ",prob, ", last end:", last_end, "opt end:", opt_start, "opt prob:", opt_prob
+                if debug:
+                    print "chart[",end_pos + 1,"] ",opt_start,"-", end_pos + 1,":", sentence[opt_start:end_pos + 1], ", ", opt_prob, ", prev :", opt_start
 
+                word = sentence[opt_start:end_pos + 1]
+                opt[end_pos + 1] = Entry(word, opt_prob, opt[opt_start])
 
-                # print "chart[",end_pos + 1,"] ",opt_start,"-", end_pos + 1,":", sentence[opt_start:end_pos + 1], ", ", opt_prob, ", prev :", opt_start
-                opt[end_pos + 1] = Entry(sentence[opt_start:end_pos + 1], opt_prob, opt[opt_start])
+            end_entry = opt[len(sentence)]
+            while end_entry:
+                prev = end_entry.prev
+                if prev:
+                    if end_entry.word in unicode_unit_connect_digit:
+                    # used for concat end word unit with previous digit
+                        if prev.word in unicode_digit:
+                            end_entry.prev = prev.prev
+                            end_entry.word = prev.word + end_entry.word
+                            continue
+                    elif end_entry.word[0] in unicode_digit:
+                       # used for concat digit
+                        if prev.word[-1] in unicode_digit:
+                            end_entry.prev = prev.prev
+                            end_entry.word = prev.word + end_entry.word
+                            continue
+                    elif uDist.get(end_entry.word, None) is None:
+                        if uDist.get(prev.word, None) is None:
 
-#            for key, val in opt.items():
-#                if val:
-#                    print "key: ",key,", val:",val.word
-#
+                            end_entry.prev = prev.prev
+                            end_entry.word = prev.word + end_entry.word
+                            continue
+                end_entry = end_entry.prev
+
+            # optimization for dynamic output 
             print opt[len(sentence)].reverse()
 
     sys.stdout = old_output
-
 
 
 if __name__ == '__main__':

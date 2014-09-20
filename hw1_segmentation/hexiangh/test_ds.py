@@ -3,7 +3,7 @@ from heapq import heappush, heappop
 import sys, codecs, optparse, os
 import operator
 
-from data_struct_dp import Entry,Pdist
+from data_struct_dp import Entry,bPdist
 
 
 optparser = optparse.OptionParser()
@@ -37,33 +37,12 @@ class Pwdist(dict):
             return None
 
 def main():
-    bigram_dict = Pdist(opts.counts2w)
+    bigram_dict = bPdist(opts.counts2w)
     unigram_dict = Pwdist(opts.counts1w)
 
     # substitute output
     old_output = sys.stdout
     sys.stdout = codecs.lookup('utf-8')[-1](sys.stdout)
-
-
-    print "--------------+----------------"
-    print bigram_dict.maxlen
-    print bigram_dict.N
-
-    print "--------------+----------------"
-    print unigram_dict.maxlen
-    print unigram_dict.N
-
-    print "--------------+----------------"
-
-    for line in file(os.path.join('data','test_in.txt')):
-        (key, freq) = line.split('\t')
-        try:
-            utf8key = unicode(key, 'utf-8')
-        except:
-            raise ValueError(("Unexpected error %s") % (sys.exc_info()[0]))
-        if bigram_dict(utf8key):
-            print utf8key + ", unigram prob: " + str(unigram_dict(utf8key)) + "\tbigram prob: " + str(bigram_dict(utf8key))
-            pass
 
     print "--------------+----------------"
 
