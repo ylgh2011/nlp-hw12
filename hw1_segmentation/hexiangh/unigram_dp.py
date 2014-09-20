@@ -100,7 +100,7 @@ def main():
                     # print word,", ",alt_start,"-",end_pos + 1,", ",prob, ", last end:", last_end, "opt end:", opt_start, "opt prob:", opt_prob
 
 
-                # print "chart[",end_pos + 1,"] ",opt_start,"-", end_pos + 1,":", sentence[opt_start:end_pos + 1], ", ", opt_prob, ", prev :", opt_start
+                print "chart[",end_pos + 1,"] ",opt_start,"-", end_pos + 1,":", sentence[opt_start:end_pos + 1], ", ", opt_prob, ", prev :", opt_start
                 opt[end_pos + 1] = Entry(sentence[opt_start:end_pos + 1], opt_prob, opt[opt_start])
 
 #            for key, val in opt.items():
@@ -108,6 +108,9 @@ def main():
 #                    print "key: ",key,", val:",val.word
 #
             print opt[len(sentence)].reverse()
+
+    print unigram.N
+
 
     sys.stdout = old_output
 
