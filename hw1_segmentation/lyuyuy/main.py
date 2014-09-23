@@ -15,14 +15,9 @@ from math import log
 old = sys.stdout
 sys.stdout = codecs.lookup('utf-8')[-1](sys.stdout)
 
-# P1w = Pdist(filename = opts.counts1w, singleCharIgnore = int(sys.argv[1]), doubleCharIgnore = int(sys.argv[2]))
 P1w = Pdist(filename = opts.counts1w, singleCharIgnore = 36, doubleCharIgnore = 0)
 P2w = Pdist(filename = opts.counts2w)
-P2wFirstWordOnly = Pdist(filename = opts.counts2w, firstWordOnly = True)
-
-# Pm = Pdist(opts.countsmark)
-# sumN = P1w.N + P2w.N + Pm.N
-# P1w.N = P2w.N = Pm.N = sumN
+# P2wFirstWordOnly = Pdist(filename = opts.counts2w, firstWordOnly = True)
 
 with open(opts.input) as f:
     for line in f:
@@ -51,9 +46,6 @@ with open(opts.input) as f:
                     P_A = P1w(wordA)                # P(B)
                     if P_AB is not None:
                         log_P_B_base_A = log(P_AB) - (log(P_A) if P_A is not None else 0)
-                        # countA = P2wFirstWordOnly.getCount(wordA)
-                        # countAB = P2w.getCount(wordA + ' ' + wordB)
-                        # log_P_B_base_A = log(float(countAB) / float(countA)) if P_A is not None else 0
                     else:
                         p1_wordB = P1w(wordB)
                         log_P_B_base_A = log(p1_wordB) if p1_wordB is not None else float('-Inf')
@@ -89,7 +81,7 @@ with open(opts.input) as f:
             # isChNum = Pdist.isChNumber(index_char)
             isChNum = False
 
-            if isNum or (isUnitNum and (not inDict)) or isDot:
+            if isNum or (isUnitNum and ((not inDict) or len(maxWord) <= 1)) or isDot:
                 if isDot and (not inDict):
                     isNum = True
                 if isNum:
@@ -103,12 +95,6 @@ with open(opts.input) as f:
                         maxWord = utf8line[i + 1:index + 1]
                         maxSum = entryList[i].logP + len(maxWord) * log(1.0/P1w.N)
                         break
-
-            # if isChNum and index > 0 and (entryList[index - 1].isChNum or Pdist.isTh(utf8line[index - 1].encode('utf-8'))):
-            #     maxEnt = index - 1 - len(entryList[index - 1].word)
-            #     maxWord = utf8line[maxEnt + 1 : index + 1]
-            #     maxSum = entryList[maxEnt].logP + len(maxWord) * log(1.0/P1w.N)
-
 
 
             if maxEnt >= 0:
