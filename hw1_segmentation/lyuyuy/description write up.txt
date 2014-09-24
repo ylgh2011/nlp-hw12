@@ -1,0 +1,24 @@
+Overall description
+Basic idea is that using dynamic programming to get the segmentation that has the highest product of the probabilities of all segments. Due to the use of bigram, the definition of the probability is conditional probability. And this algorithm also includes some heuristic and smoothing behaviors on particular characters.
+
+Goal
+w(i, j) is a word that spans from character i to character j. Our goal is to get
+arg max P(w(0, i)) * P(w(i+1, j)) * … * P(w(k + 1, n)) where 0 < i < j < …. < k < n
+
+Dynamic programming definition and corresponding formulae
+In order to reach the goal, we have to construct a dynamic programming algorithm to get the solution. 
+Define segment(i) as the best product that contains all characters from 0 to i
+Formulae:
+segment(i) = max segment(i - j) * P(w(i - j + 1, i)) where 0 < j < max length of the word in dictionary
+segment(0) = 1.0
+
+Definition of P():
+Assume B is w(i, j) and A is the last word that chosen in segment(i-1)
+Then P(B) = P2(A, B) / P1(B), where P2() is the probability of pair (A, B) in bigram, P1() is the probability of B in unigram.
+This idea is like: P(B) is actually Pw(B | A) = Pw(B, A) / P(A) when A is chosen for sure.
+
+Heuristic behaviors
+Regardless of probability, connect unicode character ‘0’, ‘1’, ‘2’, ‘3’, ‘4’, ‘5’, ‘6’, ‘7’, ‘8’, ‘9’, ‘.’ together
+
+Smoothing behaviors
+Set threshold value x. Remove all words whose length is 1 and frequency is lower than x in unigram dictionary
