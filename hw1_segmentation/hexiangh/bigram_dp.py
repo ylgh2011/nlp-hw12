@@ -25,12 +25,10 @@ def main():
     old_output = sys.stdout
     sys.stdout = codecs.lookup('utf-8')[-1](sys.stdout)
 
-    entry_list = list()
     opt = dict()
     with open(opts.input) as f:
         # eventually opt(n) = opt(n - r) + r for r belongs to (n - l, n) that unigram(r) == max
         # initially opt(r) = r for r belongs to (0, l)
-        cnt = 0
         for line in f:
             opt = dict()
             sentence = unicode(line.strip(), 'utf-8')
@@ -42,7 +40,6 @@ def main():
                 start_pos = max(0, end_pos - bDist.maxlen)
                 opt_start = 0
                 opt_prob = - 9999999999
-                is_in_dict = False
                 for alt_start in range(start_pos, end_pos + 1):
 
                     # calc last dp table entry index
@@ -74,7 +71,6 @@ def main():
                     if prob + pre_prob > opt_prob:
                         opt_start = alt_start
                         opt_prob = prob + pre_prob
-                    
                     if debug:
                         print word, "|", pre_word , ",",alt_start,"-",end_pos + 1,", ",prob, ", last end:", last_end, "opt end:", opt_start, "opt prob:", opt_prob
 
@@ -108,7 +104,7 @@ def main():
                             continue
                 end_entry = end_entry.prev
 
-            # optimization for dynamic output 
+            # optimization for dynamic output
             print opt[len(sentence)].reverse()
 
     sys.stdout = old_output
