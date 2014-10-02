@@ -19,6 +19,7 @@ class Pdist(dict):
         self.singleCharIgnore = singleCharIgnore
         self.doubleCharIgnore = doubleCharIgnore
 
+
     def __call__(self, key):
         if key in self:
             if (len(key) == 1) and (self[key] <= self.singleCharIgnore):
@@ -31,11 +32,27 @@ class Pdist(dict):
         else: 
             return None
 
+
+    def removeWordsUnderThreshold(self):
+        lst = []
+        for key in self:
+            if (len(key) == 1) and (self[key] <= self.singleCharIgnore):
+                self.N -= self[key]
+                lst.append(key)
+            if (len(key) == 2) and (self[key] <= self.doubleCharIgnore):
+                self.N -= self[key]
+                lst.append(key)
+        for key in lst:
+            del self[key]
+
+
     def getCount(self, key):
         if key in self:
             return self[key]
         else:
             return 0
+
+
 
     @staticmethod
     def isNumber(c):
@@ -61,4 +78,11 @@ class Pdist(dict):
                 return True
         return False
 
+    @staticmethod
+    def isPunctuator(c):
+        lst = ['\xef\xbc\x88', '\xef\xbc\x89', '\xe2\x80\x9d', '\xef\xbc\x8c', '\xe3\x80\x82', '\xef\xbc\x9b', '\xe3\x80\x8a', '\xe3\x80\x8b', '\xe3\x80\x81', '\xe2\x80\x9c']
+        for item in lst:
+            if item.decode('utf-8') == c.decode('utf-8'):
+                return True
+        return False
 
