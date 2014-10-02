@@ -4,7 +4,6 @@ import sys, codecs, optparse, os
 optparser = optparse.OptionParser()
 optparser.add_option("-c", "--unigramcounts", dest='counts1w', default=os.path.join('data', 'count_1w.txt'), help="unigram counts")
 optparser.add_option("-b", "--bigramcounts", dest='counts2w', default=os.path.join('data', 'count_2w.txt'), help="bigram counts")
-optparser.add_option("-m", "--markcounts", dest='countsmark', default=os.path.join('data', 'count_mark.txt'), help="mark_counts")
 optparser.add_option("-i", "--inputfile", dest="input", default=os.path.join('data', 'input'), help="input file to segment")
 (opts, _) = optparser.parse_args()
 
@@ -15,7 +14,8 @@ from math import log
 old = sys.stdout
 sys.stdout = codecs.lookup('utf-8')[-1](sys.stdout)
 
-P1w = Pdist(filename = opts.counts1w, singleCharIgnore = 36, doubleCharIgnore = 0)
+P1w = Pdist(filename = opts.counts1w, singleCharIgnore = int(sys.argv[1]), doubleCharIgnore = int(sys.argv[2]))
+# P1w.removeWordsUnderThreshold()
 P2w = Pdist(filename = opts.counts2w)
 # P2wFirstWordOnly = Pdist(filename = opts.counts2w, firstWordOnly = True)
 
@@ -45,7 +45,11 @@ with open(opts.input) as f:
                     P_AB = P2w(wordA + ' ' + wordB) # P(A, B)
                     P_A = P1w(wordA)                # P(B)
                     if P_AB is not None:
+                        # log_P_B_base_A = log(P_AB * 400)
                         log_P_B_base_A = log(P_AB) - (log(P_A) if P_A is not None else 0)
+                        # countA = P1w.getCount(wordA)
+                        # countAB = P2w.getCount(wordA + ' ' + wordB)
+                        # log_P_B_base_A = log(float(countAB) / float(countA)) if P_A is not None else 0
                     else:
                         p1_wordB = P1w(wordB)
                         log_P_B_base_A = log(p1_wordB) if p1_wordB is not None else float('-Inf')
@@ -57,12 +61,15 @@ with open(opts.input) as f:
                         maxSum = thisLogP + preLogP
                         maxEnt = i - 1
                         maxWord = utf8line[maxEnt + 1:index + 1]
-                    if (P1w(wordB) is not None) or (P2w(wordA + ' ' + wordB) is not None):
-                    # if P1w(wordB) is not None:
-                        inDict = True
+                        if (P1w(wordB) is not None) or (P2w(wordA + ' ' + wordB) is not None):
+                           # if P1w(wordB) is not None:
+                            inDict = True
+                        else:
+                            inDict = False
+
 
 #Connect the characters that are not in the dictionaries
-            if inDict is False:
+            if not inDict:
                 maxEnt = -1
                 maxWord = utf8line[:index + 1]
                 maxSum = len(maxWord) * log(1.0/P1w.N)
@@ -72,6 +79,33 @@ with open(opts.input) as f:
                         maxWord = utf8line[i + 1:index + 1]
                         maxSum = entryList[i].logP + len(maxWord) * log(1.0/P1w.N)
                         break
+
+
+#######
+            currentSCIU = maxWord if inDict else utf8line[index]
+            isSingleCharInUnigram = (len(currentSCIU) == 1) and (currentSCIU in P1w) and (not Pdist.isPunctuator(utf8line[index].encode('utf-8')))
+            # print currentSCIU, isSingleCharInUnigram
+            if isSingleCharInUnigram:
+                if not Pdist.isPunctuator(utf8line[index].encode('utf-8')):
+                    if (index > 0) and (len(currentSCIU) == 1) and entryList[index - 1].isSingleCharInUnigram:
+                        if (P2w(entryList[index - 1].word[-1] + ' ' + currentSCIU) is None) and ((entryList[index - 1].word[-1] + currentSCIU) in P1w):
+                            maxEnt = index - len(entryList[index - 1].word) - 1
+                            maxWord = utf8line[maxEnt + 1 : index + 1]
+                            maxSum = entryList[maxEnt].logP + len(currentSCIU) * log(1.0/P1w.N)
+                            isSingleCharInUnigram = True
+                        elif (P2w(entryList[index - 1].word[-1] + ' ' + currentSCIU) is not None):
+                            maxEnt = index - 2
+                            maxWord = utf8line[maxEnt + 1] + ' ' + utf8line[index]
+                            maxSum = entryList[maxEnt].logP + 2 * log(1.0/P1w.N)
+                            isSingleCharInUnigram = False
+                            inDict = True
+                        else:
+                            maxEnt = index - 2
+                            maxWord = utf8line[maxEnt + 1] + utf8line[index]
+                            maxSum = entryList[maxEnt].logP + 2 * log(1.0/P1w.N)
+                            isSingleCharInUnigram = False
+                            inDict = True
+
 
 #Connect consecutive numbers
             index_char = utf8line[index].encode('utf-8')
@@ -98,14 +132,14 @@ with open(opts.input) as f:
 
 
             if maxEnt >= 0:
-                entryList.append(Entry(maxWord, maxSum, entryList[maxEnt], inDict, isNum, isUnitNum, isChNum))
+                entryList.append(Entry(maxWord, maxSum, entryList[maxEnt], inDict, isNum, isUnitNum, isChNum, isSingleCharInUnigram))
             else:
-                entryList.append(Entry(maxWord, maxSum, None, inDict, isNum, isUnitNum, isChNum))
+                entryList.append(Entry(maxWord, maxSum, None, inDict, isNum, isUnitNum, isChNum, isSingleCharInUnigram))
 
         print Entry.rollback(entryList[len(utf8line) - 1])
 
         # for item in entryList:
-        #     print item.__str__(),
+        #     print item.__str__()
         # print
 
 sys.stdout = old
