@@ -83,7 +83,6 @@ def main():
                         prob = log(unigram(word))
                     else:
                         prob = - 9999999999
-                    
                     # calc last dp table entry index
                     last_end = max(alt_start, 0)
                     # Print debug information

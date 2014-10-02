@@ -24,7 +24,7 @@ class bPdist(dict):
             self[utf8cond][utf8key] = self[utf8cond].get(utf8key, 0) + float(freq)
             self.maxlen = max(len(utf8key), len(utf8cond), self.maxlen)
 
-        # probability smoothing 
+        # probability smoothing
 #        for vals in self.values():
 #            vals_cnt = len(vals)
 #            penaulty = 0.1 / vals_cnt
@@ -33,7 +33,6 @@ class bPdist(dict):
 
 #            vals.update({'Unknown':0.1})
 
-        
         # self.N = float(N or sum([i for vals in self.values() for i in vals.values()]))
         self.missingfn = missingfn or (lambda k, N: 1./N)
 
