@@ -29,12 +29,49 @@ Inside the perceptron training loop:
 """
 
 import perc
-import sys, optparse, os
+import sys, optparse, os, copy
 from collections import defaultdict
 
 def perc_train(train_data, tagset, numepochs):
     feat_vec = defaultdict(int)
     # insert your code here
+    if len(tagset) <= 0:
+        raise ValueError("Empty tagset")
+
+    numepochs = int(5)
+    default_tag = tagset[0]
+
+    for t in range(0, numepochs):
+        tmp = 0
+        # Count sentence
+        for (labeled_list, feat_list) in train_data:
+            tmp += 1
+            print 'Iteration#',t,' - Sentence[', tmp,'] is processing now.'
+            labels = copy.deepcopy(labeled_list)
+            # add in the start and end buffers for the context
+            # for every sentence in the training set, iterate numepochs times
+            output = perc.perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag)
+            # compare current output and true result
+
+            # correct_flag = True
+            feat_index = 0
+            # check word by word if the predicted tag is equal to the true tag
+            for i, v in enumerate(output):
+                (feat_index, feats) = perc.feats_for_word(feat_index, feat_list)
+                
+                # retrieve the feature for a word
+                if len(feats) == 0:
+                    print >>sys.stderr, " ".join(labels), " ".join(feat_list), "\n"
+                    raise ValueError("features do not align with input sentence")
+                
+                fields = labels[i].split()
+                label = fields[2]
+                if output[i] != label:
+                    for feat in feats:
+                        feat_vec[feat, output[i]] = max(feat_vec[feat, output[i]], 0) - 1
+                        feat_vec[feat, label] = max(feat_vec[feat, label], 0) + 1
+
+
     # please limit the number of iterations of training to n iterations
     return feat_vec
 
@@ -50,6 +87,7 @@ if __name__ == '__main__':
     # each element in the feat_vec dictionary is:
     # key=feature_id value=weight
     feat_vec = {}
+    # format: {('U14:VBG','B-VP'):w1, ...}
     tagset = []
     train_data = []
 

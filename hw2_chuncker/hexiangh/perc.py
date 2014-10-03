@@ -45,23 +45,29 @@ def read_labeled_data(labelfile, featfile):
             break
         else:
             labeled_data.append( (labeled_list, feat_list) )
+            # data format (['Rockwell NNP','International NNP',...],['U00:_B-2','U01:_B-1','U02:Rockwell',...] )
     lab.close()
     feat.close()
     return labeled_data
 
 def feats_for_word(start_index, feat_list):
+    # iterate feature list for a word, and increase the feature index
     feats = []
     endstate = None
     end_index = start_index
     for i in range(start_index, len(feat_list)):
+        # iterate the feature list
         feat_value = feat_list[i]
         # check if we reached the feats for the next word
         if feat_value[:4] == endstate:
             end_index = i
+            # set up the end_index to the current exit index
             break
         feats.append(feat_value)
+        # normally append the feature states
         if endstate is None: 
-            endstate = feat_value[:4] # set endstate to 'U00:'
+            endstate = feat_value[:4] 
+            # set endstate to 'U00:', so that everytime this function will only iterate 1 feature history
     return (end_index, feats)
 
 def get_maxvalue(viterbi_dict):
@@ -79,6 +85,7 @@ def get_maxvalue(viterbi_dict):
     return maxvalue
 
 def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
+    # feature vector is the training result, default_tag is NP
     output = []
     labels = copy.deepcopy(labeled_list)
     # add in the start and end buffers for the context
@@ -93,7 +100,9 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
     # Set up the data structure for viterbi search
     viterbi = {}
     for i in range(0, N):
-        viterbi[i] = {} # each column contains for each tag: a (value, backpointer) tuple
+        viterbi[i] = {} 
+        # each column contains for each tag: a (value, backpointer) tuple
+
 
     # We do not tag the first two and last two words
     # since we added B_-2, B_-1, B_+1 and B_+2 as buffer words 
@@ -104,20 +113,26 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
     feat_index = 0
     for i in range(2, N-2):
         (feat_index, feats) = feats_for_word(feat_index, feat_list)
+        # retrieve the feature for a word
         if len(feats) == 0:
             print >>sys.stderr, " ".join(labels), " ".join(feat_list), "\n"
             raise ValueError("features do not align with input sentence")
 
         fields = labels[i].split()
+        # e.g. 'International NNP' split into 'International' & 'NNP'
         (word, postag) = (fields[0], fields[1])
+        # word = 'International', postag = 'NNP'
         found_tag = False
         for tag in tagset:
+            # iterate the tag set
             has_bigram_feat = False
             weight = 0.0
             # sum up the weights for all features except the bigram features
             for feat in feats:
+                # e.g. feat == 'U14:VBG', tag == 'B-VP'
                 if feat == 'B': has_bigram_feat = True
                 if (feat, tag) in feat_vec:
+                    # if in the trained feature vector, we have this (feat tag) tuple, add up the weight 
                     weight += feat_vec[feat, tag]
                     #print >>sys.stderr, "feat:", feat, "tag:", tag, "weight:", feat_vec[feat, tag]
             prev_list = []
@@ -128,6 +143,7 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
                 if has_bigram_feat:
                     prev_tag_feat = "B:" + prev_tag
                     if (prev_tag_feat, tag) in feat_vec:
+                        # Add bigram value
                         prev_tag_weight += feat_vec[prev_tag_feat, tag]
                 prev_list.append( (prev_tag_weight + prev_value, prev_tag) )
             (best_weight, backpointer) = sorted(prev_list, key=operator.itemgetter(0), reverse=True)[0]
@@ -136,12 +152,14 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
                 viterbi[i][tag] = (best_weight, backpointer)
                 found_tag = True
         if found_tag is False:
+            # if not found, set default tag
             viterbi[i][default_tag] = (0.0, default_tag)
 
     # recover the best sequence using backpointers
     maxvalue = get_maxvalue(viterbi[N-3])
     best_tag = maxvalue[0]
     for i in range(N-3, 1, -1):
+        # reverse the sentense and insert into the output
         output.insert(0,best_tag)
         (value, backpointer) = viterbi[i][best_tag]
         best_tag = backpointer
@@ -164,10 +182,14 @@ def conll_format(output, labeled_list):
     return conll_output
 
 def perc_testall(feat_vec, data, tagset):
+    # feat_vec is the training result
     if len(tagset) <= 0:
         raise ValueError("Empty tagset")
     default_tag = tagset[0]
     for (labeled_list, feat_list) in data:
+        # Each sentense is a tuple of two lists
+        # So that every time output one sentence
+        # data format [(['Rockwell NNP','International NNP',...],['U00:_B-2','U01:_B-1','U02:Rockwell',...] ), (...), ...]
         output = perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag)
         print "\n".join(conll_format(output, labeled_list))
         print
@@ -193,6 +215,8 @@ if __name__ == '__main__':
     optparser.add_option("-t", "--tagsetfile", dest="tagsetfile", default=os.path.join("data", "tagset.txt"), help="tagset that contains all the labels produced in the output, i.e. the y in \phi(x,y)")
     optparser.add_option("-i", "--inputfile", dest="inputfile", default=os.path.join("data", "input.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
     optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "input.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    # optparser.add_option("-i", "--inputfile", dest="inputfile", default=os.path.join("data", "small.test"), help="input data, i.e. the x in \phi(x,y)")
+    # optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "small.test.feats"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
     optparser.add_option("-m", "--modelfile", dest="modelfile", default=os.path.join("data", "default.model"), help="weights for all features stored on disk")
     (opts, _) = optparser.parse_args()
 
