@@ -45,8 +45,6 @@ def perc_train(train_data, tagset, numepochs):
         # Count sentence
         print 'Iteration#',t,' is processing now.'
         for (labeled_list, feat_list) in train_data:
-            tmp += 1
-            #print 'Iteration#',t,' - Sentence[', tmp,'] is processing now.'
             labels = copy.deepcopy(labeled_list)
             # add in the start and end buffers for the context
             # for every sentence in the training set, iterate numepochs times
@@ -64,10 +62,23 @@ def perc_train(train_data, tagset, numepochs):
                 
                 fields = labels[i].split()
                 label = fields[2]
-                if output[i] != label:
+                if i > 0: 
+                    label_pre = labels[i-1].split()[2]
+                    if output[i-1] is not label_pre or output[i] != label:
+                        for feat in feats:
+                            if feat[0] == 'B': # for bigram feature
+                                feat_out = feat + ":" + output[i-1]  # feat_out is the "B:<previous output>"
+                                feat_lab = feat + ":" + label_pre  # feat_lab is the "B:<previous label>"
+                                feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
+                                feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+                            else: # for U00 to U22 feature
+                                feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
+                                feat_vec[feat, label] = feat_vec[feat, label] + 1
+                else:  # for i==0 case, all the first word in each sentence
+                    label_pre = 'B_-1'  # previous label will be denoted by B_-1
                     for feat in feats:
-                        if feat == 'B' and output[i-1] is not None:
-                            feat = feat + ":" + output[i-1]
+                        if feat[0] == 'B':  # bigram feature case
+                            feat = feat + ":" + label_pre
                         feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
                         feat_vec[feat, label] = feat_vec[feat, label] + 1
 
