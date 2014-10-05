@@ -63,13 +63,67 @@ def perc_train(train_data, tagset, numepochs):
                 if len(feats) == 0:
                     print >>sys.stderr, " ".join(labels), " ".join(feat_list), "\n"
                     raise ValueError("features do not align with input sentence")
-                
+
+
+                if i > 0:
+                    fields = labels[i].split()
+                    pre_label = fields[2]
+
                 fields = labels[i].split()
                 label = fields[2]
-                if output[i] != label:
+
+                # update feature for bigram individually since it has the mentioned conner case
+                for feat in feats:
+                    if feat == 'B':
+                        if i == 0:
+                            if v != label:
+                                feat_vec['B_-1', v] = feat_vec[feat, v] - 1
+                                feat_vec['B_-1', label] = feat_vec[feat, label] + 1
+
+                        elif v != label or output[i-1] != pre_label:
+                            feat_out = 'B:' + output[i - 1]
+                            feat_lab = 'B:' + pre_label
+                            feat_vec[feat_out, v] = feat_vec[feat_out, v] - 1
+                            feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+                            # print 'Update feat_vec[',feat_out, ',', v,'] = ', str(feat_vec[feat_out, v])
+                            # print 'Update feat_vec[',feat_lab, ',', label,'] = ', str(feat_vec[feat_lab, label])
+
+
+                if v != label:
                     for feat in feats:
-                        feat_vec[feat, output[i]] = max(feat_vec[feat, output[i]], 0) - 1
-                        feat_vec[feat, label] = max(feat_vec[feat, label], 0) + 1
+                        if feat == 'B':
+                            # skip bigram case
+                            continue
+                        else:
+                            feat_vec[feat, v] = feat_vec[feat, v] - 1
+                            feat_vec[feat, label] = feat_vec[feat, label] + 1
+                            # print 'Update feat_vec[',feat, ',', v,'] = ', str(feat_vec[feat, v])
+                            # print 'Update feat_vec[',feat, ',', label,'] = ', str(feat_vec[feat, label])
+
+
+    # delete dictionary terms with value of 0 and regularize the weight
+    cnt = dict()
+
+    for key, val in feat_vec:
+        if val == 0:
+            del feat_vec[key]
+        elif key[0] == 'B':
+            if cnt.get(key[0], -1) != -1: 
+                cnt[key[0]] = cnt[key[0]] + 1
+            else: 
+                cnt[key[0]] = 0
+        else:
+            if cnt.get(key[:3], -1) != -1: 
+                cnt[key[:3]] = cnt[key[:3]] + 1
+            else: 
+                cnt[key[:3]] = 0
+
+    for key in feat_vec:
+        if key[0] == 'B':
+            feat_vec[key] = feat_vec[key]/cnt[key[0]]
+        elif key[:3] in cnt:
+            feat_vec[key] = feat_vec[key]/cnt[key[:3]]
+
 
 
     # please limit the number of iterations of training to n iterations
@@ -80,6 +134,9 @@ if __name__ == '__main__':
     optparser.add_option("-t", "--tagsetfile", dest="tagsetfile", default=os.path.join("data", "tagset.txt"), help="tagset that contains all the labels produced in the output, i.e. the y in \phi(x,y)")
     optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
     optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    # optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.dev"), help="input data, i.e. the x in \phi(x,y)")
+    # optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.dev"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+
     optparser.add_option("-e", "--numepochs", dest="numepochs", default=int(10), help="number of epochs of training; in each epoch we iterate over over all the training examples")
     optparser.add_option("-m", "--modelfile", dest="modelfile", default=os.path.join("data", "default.model"), help="weights for all features stored on disk")
     (opts, _) = optparser.parse_args()
