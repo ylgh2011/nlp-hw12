@@ -77,8 +77,8 @@ def perc_train(train_data, tagset, numepochs):
                     if feat == 'B':
                         if i == 0:
                             if v != label:
-                                feat_vec['B:B_-1', v] = feat_vec[feat, v] - 1
-                                feat_vec['B:B_-1', label] = feat_vec[feat, label] + 1
+                                feat_vec['B_-1', v] = feat_vec[feat, v] - 1
+                                feat_vec['B_-1', label] = feat_vec[feat, label] + 1
 
                         elif v != label or output[i-1] != pre_label:
                             feat_out = 'B:' + output[i - 1]
