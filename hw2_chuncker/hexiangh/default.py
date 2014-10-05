@@ -38,7 +38,7 @@ def perc_train(train_data, tagset, numepochs):
     if len(tagset) <= 0:
         raise ValueError("Empty tagset")
 
-    numepochs = int(5)
+    numepochs = int(1)
     default_tag = tagset[0]
 
     for t in range(0, numepochs):
@@ -85,8 +85,8 @@ def perc_train(train_data, tagset, numepochs):
                             feat_lab = 'B:' + pre_label
                             feat_vec[feat_out, v] = feat_vec[feat_out, v] - 1
                             feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
-                            # print 'Update feat_vec[',feat_out, ',', v,'] = ', str(feat_vec[feat_out, v])
-                            # print 'Update feat_vec[',feat_lab, ',', label,'] = ', str(feat_vec[feat_lab, label])
+                            print 'Update feat_vec[',feat_out, ',', v,'] = ', str(feat_vec[feat_out, v])
+                            print 'Update feat_vec[',feat_lab, ',', label,'] = ', str(feat_vec[feat_lab, label])
 
 
                 if v != label:
@@ -97,32 +97,33 @@ def perc_train(train_data, tagset, numepochs):
                         else:
                             feat_vec[feat, v] = feat_vec[feat, v] - 1
                             feat_vec[feat, label] = feat_vec[feat, label] + 1
-                            # print 'Update feat_vec[',feat, ',', v,'] = ', str(feat_vec[feat, v])
-                            # print 'Update feat_vec[',feat, ',', label,'] = ', str(feat_vec[feat, label])
+                            print 'Update feat_vec[',feat, ',', v,'] = ', str(feat_vec[feat, v])
+                            print 'Update feat_vec[',feat, ',', label,'] = ', str(feat_vec[feat, label])
+
 
 
     # delete dictionary terms with value of 0 and regularize the weight
-    cnt = dict()
+    # cnt = dict()
 
-    for key, val in feat_vec:
-        if val == 0:
-            del feat_vec[key]
-        elif key[0] == 'B':
-            if cnt.get(key[0], -1) != -1: 
-                cnt[key[0]] = cnt[key[0]] + 1
-            else: 
-                cnt[key[0]] = 0
-        else:
-            if cnt.get(key[:3], -1) != -1: 
-                cnt[key[:3]] = cnt[key[:3]] + 1
-            else: 
-                cnt[key[:3]] = 0
+    # for key, val in feat_vec:
+    #     if val == 0:
+    #         del feat_vec[key]
+    #     elif key[0] == 'B':
+    #         if cnt.get(key[0], -1) != -1: 
+    #             cnt[key[0]] = cnt[key[0]] + 1
+    #         else: 
+    #             cnt[key[0]] = 0
+    #     else:
+    #         if cnt.get(key[:3], -1) != -1: 
+    #             cnt[key[:3]] = cnt[key[:3]] + 1
+    #         else: 
+    #             cnt[key[:3]] = 0
 
-    for key in feat_vec:
-        if key[0] == 'B':
-            feat_vec[key] = feat_vec[key]/cnt[key[0]]
-        elif key[:3] in cnt:
-            feat_vec[key] = feat_vec[key]/cnt[key[:3]]
+    # for key in feat_vec:
+    #     if key[0] == 'B':
+    #         feat_vec[key] = feat_vec[key]/cnt[key[0]]
+    #     elif key[:3] in cnt:
+    #         feat_vec[key] = feat_vec[key]/cnt[key[:3]]
 
 
 
@@ -132,10 +133,10 @@ def perc_train(train_data, tagset, numepochs):
 if __name__ == '__main__':
     optparser = optparse.OptionParser()
     optparser.add_option("-t", "--tagsetfile", dest="tagsetfile", default=os.path.join("data", "tagset.txt"), help="tagset that contains all the labels produced in the output, i.e. the y in \phi(x,y)")
-    optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
-    optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
-    # optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.dev"), help="input data, i.e. the x in \phi(x,y)")
-    # optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.dev"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    # optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
+    # optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.dev"), help="input data, i.e. the x in \phi(x,y)")
+    optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.dev"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
 
     optparser.add_option("-e", "--numepochs", dest="numepochs", default=int(10), help="number of epochs of training; in each epoch we iterate over over all the training examples")
     optparser.add_option("-m", "--modelfile", dest="modelfile", default=os.path.join("data", "default.model"), help="weights for all features stored on disk")
