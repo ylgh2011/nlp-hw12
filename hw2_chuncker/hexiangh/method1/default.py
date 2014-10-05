@@ -38,7 +38,7 @@ def perc_train(train_data, tagset, numepochs):
     if len(tagset) <= 0:
         raise ValueError("Empty tagset")
 
-    numepochs = int(1)
+    numepochs = int(10)
     default_tag = tagset[0]
 
     for t in range(0, numepochs):
