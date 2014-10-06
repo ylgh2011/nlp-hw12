@@ -71,6 +71,8 @@ def perc_train(train_data, tagset, numepochs):
                                 feat_lab = feat + ":" + label_pre  # feat_lab is the "B:<previous label>"
                                 feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
                                 feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+                                feat_vec[feat_out, label] = feat_vec[feat_out, label] + 1
+                                feat_vec[feat_lab, output[i]] = feat_vec[feat_lab, output[i]] - 1
                             else: # for U00 to U22 feature
                                 feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
                                 feat_vec[feat, label] = feat_vec[feat, label] + 1
