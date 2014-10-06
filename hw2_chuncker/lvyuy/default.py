@@ -38,7 +38,7 @@ def perc_train(train_data, tagset, numepochs):
     if len(tagset) <= 0:
         raise ValueError("Empty tagset")
 
-    numepochs = int(10)
+    numepochs = int(1)
     default_tag = tagset[0]
     for t in range(numepochs):
         tmp = 0
@@ -64,20 +64,36 @@ def perc_train(train_data, tagset, numepochs):
                 label = fields[2]
                 if i > 0: 
                     label_pre = labels[i-1].split()[2]
-                    if output[i-1] is not label_pre or output[i] != label:
-                        for feat in feats:
-                            if feat[0] == 'B': # for bigram feature
-                                feat_out = feat + ":" + output[i-1]  # feat_out is the "B:<previous output>"
-                                feat_lab = feat + ":" + label_pre  # feat_lab is the "B:<previous label>"
-                                feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
-                                feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+                    for feat in feats:
+                        if feat[0] == 'B': # for bigram feature
+                            feat_out = feat + ":" + output[i-1]  # feat_out is the "B:<previous output>"
+                            feat_lab = feat + ":" + label_pre  # feat_lab is the "B:<previous label>"
 
-                                feat_vec[feat_out, label] = feat_vec[feat_out, label] + 1
-                                feat_vec[feat_lab, output[i]] = feat_vec[feat_lab, output[i]] - 1
+                            if   output[i-1] != label_pre and output[i] != label:
+                                feat_vec[feat_out, output[i]]   -= 1
+                                feat_vec[feat_lab, output[i]]   -= 1
+                                feat_vec[feat_out, label]       += 1
+                                feat_vec[feat_lab, label]       += 1
 
-                            else: # for U00 to U22 feature
-                                feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
-                                feat_vec[feat, label] = feat_vec[feat, label] + 1
+                            elif output[i-1] == label_pre and output[i] != label:
+                                feat_vec[feat_lab, output[i]]   -= 2
+                                feat_vec[feat_lab, label]       += 2
+
+                            elif output[i-1] != label_pre and output[i] == label:
+                                pass
+
+                            elif output[i-1] == label_pre and output[i] == label:
+                                pass
+
+                            # feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
+                            # feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+
+                            # feat_vec[feat_out, label] = feat_vec[feat_out, label] + 1
+                            # feat_vec[feat_lab, output[i]] = feat_vec[feat_lab, output[i]] - 1
+
+                        else: # for U00 to U22 feature
+                            feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
+                            feat_vec[feat, label] = feat_vec[feat, label] + 1
                 else:  # for i==0 case, all the first word in each sentence
                     label_pre = 'B_-1'  # previous label will be denoted by B_-1
                     for feat in feats:

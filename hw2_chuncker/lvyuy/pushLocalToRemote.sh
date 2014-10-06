@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ $# -ne 2 ]; then
-	echo "Usage: scriptname <local branch> <remote branch>"
+	echo "Usage: script.sh <local branch> <remote branch>"
 	exit 1
 fi
 
