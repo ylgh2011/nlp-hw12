@@ -158,6 +158,7 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
     # recover the best sequence using backpointers
     maxvalue = get_maxvalue(viterbi[N-3])
     best_tag = maxvalue[0]
+    # print viterbi
     for i in range(N-3, 1, -1):
         # reverse the sentense and insert into the output
         output.insert(0,best_tag)
