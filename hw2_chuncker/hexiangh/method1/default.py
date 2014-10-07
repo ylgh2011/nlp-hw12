@@ -63,38 +63,57 @@ def perc_train(train_data, tagset, numepochs):
                     print >>sys.stderr, " ".join(labels), " ".join(feat_list), "\n"
                     raise ValueError("features do not align with input sentence")
                 
-                fields = labels[i].split()
-                label = fields[2]
-                if i > 0: 
-                    label_pre = labels[i-1].split()[2]
-                    if output[i-1] is not label_pre or output[i] != label:
+                label = labels[i].split()[2]
+                if i > 1: 
+                    label_i_1 = labels[i-1].split()[2]
+                    label_i_2 = labels[i-2].split()[2]
+                    if output[i-1] != label_i_1 or output[i] != label:
                         for feat in feats:
                             if feat[0] == 'B': 
-                            # for bigram feature
-                                feat_out = feat + ":" + output[i-1]  
+                                feat_out = feat + ":" + output[i-2] + "," + output[i-1]  
                                 # feat_out is the "B:<previous output>"
-                                feat_lab = feat + ":" + label_pre  
+                                feat_lab = feat + ":" + label_i_2 + "," + label_i_1
                                 # feat_lab is the "B:<previous label>"
                                 # reward best condition
                                 feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
 
                                 # penalize condition
                                 feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
-                                feat_vec[feat_out, label] = feat_vec[feat_out, label] - 1
-                                feat_vec[feat_lab, output[i]] = feat_vec[feat_lab, output[i]] - 1
+                                # feat_vec[feat_out, label] = feat_vec[feat_out, label] - 1
+                                # feat_vec[feat_lab, output[i]] = feat_vec[feat_lab, output[i]] - 1
                             else: 
                             # for U00 to U22 feature
                                 feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
                                 feat_vec[feat, label] = feat_vec[feat, label] + 1
-                else:
+                elif i == 1:
                     # for i==0 case, all the first word in each sentence
-                    label_pre = 'B_-1'  # previous label will be denoted by B_-1
-                    for feat in feats:
-                        if feat[0] == 'B':  
-                        # bigram feature case
-                            feat = feat + ":" + label_pre
-                        feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
-                        feat_vec[feat, label] = feat_vec[feat, label] + 1
+                    label_i_2 = 'B_-1'  # previous label will be denoted by B_-1
+                    label_i_1 = labels[i-1].split()[2]
+                    if output[i-1] != label_i_1 or output[i] != label:
+                        for feat in feats:
+                            if feat[0] == 'B': 
+                                feat_out = feat + ":" + label_i_2 + "," + output[i-1]  
+                                feat_lab = feat + ":" + label_i_2 + "," + label_i_1
+                                # reward best condition
+                                feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+
+                                # penalize condition
+                                feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
+                            else: 
+                            # for U00 to U22 feature
+                                feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
+                                feat_vec[feat, label] = feat_vec[feat, label] + 1
+                elif i == 0:
+                    label_i_2 = 'B_-2'
+                    label_i_1 = 'B_-1'
+                    if output[i-1] != label_i_1 or output[i] != label:
+                        for feat in feats:
+                            if feat[0] == 'B': 
+                                feat = feat + ":" + label_i_2 + "," + label_i_1
+
+                            feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
+                            feat_vec[feat, label] = feat_vec[feat, label] + 1
+
 
 
 
@@ -127,10 +146,10 @@ def perc_train(train_data, tagset, numepochs):
 if __name__ == '__main__':
     optparser = optparse.OptionParser()
     optparser.add_option("-t", "--tagsetfile", dest="tagsetfile", default=os.path.join("data", "tagset.txt"), help="tagset that contains all the labels produced in the output, i.e. the y in \phi(x,y)")
-    optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
-    optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
-    # optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.dev"), help="input data, i.e. the x in \phi(x,y)")
-    # optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.dev"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    # optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
+    # optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.dev"), help="input data, i.e. the x in \phi(x,y)")
+    optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.dev"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
 
     optparser.add_option("-e", "--numepochs", dest="numepochs", default=int(10), help="number of epochs of training; in each epoch we iterate over over all the training examples")
     optparser.add_option("-m", "--modelfile", dest="modelfile", default=os.path.join("data", "default.model"), help="weights for all features stored on disk")
