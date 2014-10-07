@@ -36,6 +36,7 @@ def read_labeled_data(labelfile, featfile):
             (feat_keyword, feat_w) = feat_line.split() # throw away the FEAT keyword
             feat_w = feat_w.strip()
             feat_list.append(feat_w)
+            if feat_w == 'B': feat_list.append('T')
         if len(labeled_list) == 0:
         #if lab_w == '': 
         #    if feat_line != '': 
@@ -89,10 +90,10 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
     output = []
     labels = copy.deepcopy(labeled_list)
     # add in the start and end buffers for the context
-    labels.insert(0, 'B_-1 B_-1 B_-1')
-    labels.insert(0, 'B_-2 B_-2 B_-2') # first two 'words' are B_-2 B_-1
-    labels.append('B_+1 B_+1 B_+1')
-    labels.append('B_+2 B_+2 B_+2') # last two 'words' are B_+1 B_+2
+    labels.insert(0, '_B-1 _B-1 _B-1')
+    labels.insert(0, '_B-2 _B-2 _B-2') # first two 'words' are B_-2 B_-1
+    labels.append('_B+1 _B+1 _B+1')
+    labels.append('_B+2 _B+2 _B+2') # last two 'words' are B_+1 B_+2
 
     # size of the viterbi data structure
     N = len(labels)
@@ -106,8 +107,8 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
 
     # We do not tag the first two and last two words
     # since we added B_-2, B_-1, B_+1 and B_+2 as buffer words 
-    viterbi[0]['B_-2',''] = (0.0, ('',''))
-    viterbi[1]['B_-2','B_-1'] = (0.0, ('B_-2',''))
+    viterbi[0]['_B-2',''] = (0.0, ('',''))
+    viterbi[1]['_B-2','_B-1'] = (0.0, ('_B-2',''))
 
     # find the value of best_tag for each word i in the input
     feat_index = 0
@@ -132,11 +133,13 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
 
                 # iterate whole tag set
                 has_trigram_feat = False
+                has_bigram_feat = False
                 weight = 0.0
 
                 # sum up all feature weight
                 for feat in feats:
-                    if feat == 'B': has_trigram_feat = True
+                    if feat == 'B': has_bigram_feat = True
+                    if feat == 'T': has_trigram_feat = True
                     if (feat, v) in feat_vec:
                         weight += feat_vec[feat, v]
 
@@ -145,22 +148,30 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
                 best_weight = 0.0
                 backpointer = ('', '')
                 for (prev_u, prev_v) in viterbi[i-1]:
-                    # print >>sys.stderr, "word:", word, "feat:", feat, "tag", v, "prev_tag:", prev_v, "prev_prev_tag:", prev_u
-                    (prev_value, prev_backpointer) = viterbi[i-1][prev_u, prev_v]
-                    prev_tag_weight = weight
-                    if has_trigram_feat:
-                        prev_tag_feat = "B:" + prev_u + ',' + prev_v
-                        if (prev_tag_feat, v) in feat_vec:
-                            # Add bigram value
-                            prev_tag_weight += feat_vec[prev_tag_feat, v]
+                    if prev_v == u:
+                        # print >>sys.stderr, "word:", word, "feat:", feat, "tag", v, "prev_tag:", prev_v, "prev_prev_tag:", prev_u
+                        (prev_value, prev_backpointer) = viterbi[i-1][prev_u, prev_v]
+                        prev_tag_weight = weight
+                        if has_trigram_feat:
+                            prev_tag_feat = "T:" + prev_u + ',' + prev_v
+                            if (prev_tag_feat, v) in feat_vec:
+                                # add trigram value
+                                prev_tag_weight += feat_vec[prev_tag_feat, v]
 
-                    if best_weight <= prev_tag_weight + prev_value:
-                        best_weight = prev_tag_weight + prev_value
-                        backpointer = (prev_u, prev_v)
-                    # prev_list.append( (prev_tag_weight + prev_value, (prev_u, prev_v)) )
+                        # if has_bigram_feat:
+                        #     prev_tag_feat = "B:" + prev_v
+                        #     if (prev_tag_feat, v) in feat_vec:
+                        #         # add bigram value
+                        #         prev_tag_weight += feat_vec[prev_tag_feat, v]
+                        
 
-                # (best_weight, backpointer) = sorted(prev_list, key=operator.itemgetter(0), reverse=True)[0]
-                # print >>sys.stderr, "best_weight:", best_weight, "backpointer:", backpointer
+                        if best_weight <= prev_tag_weight + prev_value:
+                            best_weight = prev_tag_weight + prev_value
+                            backpointer = (prev_u, prev_v)
+                        # prev_list.append( (prev_tag_weight + prev_value, (prev_u, prev_v)) )
+
+                    # (best_weight, backpointer) = sorted(prev_list, key=operator.itemgetter(0), reverse=True)[0]
+                    # print >>sys.stderr, "best_weight:", best_weight, "backpointer:", backpointer
 
                 if best_weight != 0.0:
                     viterbi[i][u, v] = (best_weight, backpointer)

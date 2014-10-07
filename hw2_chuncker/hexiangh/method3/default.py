@@ -66,9 +66,10 @@ def perc_train(train_data, tagset, numepochs):
                 if i > 1: 
                     label_i_1 = labels[i-1].split()[2]
                     label_i_2 = labels[i-2].split()[2]
-                    if output[i-2] != label_i_2 or output[i-1] != label_i_1 or output[i] != label:
+                    if output[i] != label:
                         for feat in feats:
-                            if feat[0] == 'B': 
+                            if feat[0] == 'T' and output[i-2] != label_i_2 and output[i-1] != label_i_1: 
+                                # trigram case 
                                 feat_out = feat + ":" + output[i-2] + "," + output[i-1]  
                                 # feat_out is the "B:<previous output>"
                                 feat_lab = feat + ":" + label_i_2 + "," + label_i_1
@@ -78,19 +79,26 @@ def perc_train(train_data, tagset, numepochs):
 
                                 # penalize condition
                                 feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
-                                # feat_vec[feat_out, label] = feat_vec[feat_out, label] - 1
-                                # feat_vec[feat_lab, output[i]] = feat_vec[feat_lab, output[i]] - 1
+
+                            # elif feat[0] == 'B' and output[i-1] != label_i_1:
+                            #     # bigram case
+                            #     feat_out = feat + ":" + output[i-1]  
+                            #     feat_lab = feat + ":" + label_i_1
+                            #     feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+                            #     feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
+
                             else: 
                             # for U00 to U22 feature
                                 feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
                                 feat_vec[feat, label] = feat_vec[feat, label] + 1
                 elif i == 1:
                     # for i==0 case, all the first word in each sentence
-                    label_i_2 = 'B_-1'  # previous label will be denoted by B_-1
+                    label_i_2 = '_-1'  # previous label will be denoted by B_-1
                     label_i_1 = labels[i-1].split()[2]
-                    if output[i-1] != label_i_1 or output[i] != label:
+                    if  output[i] != label:
                         for feat in feats:
-                            if feat[0] == 'B': 
+                            if feat[0] == 'T' and output[i-1] != label_i_1:
+                            # trigram case 
                                 feat_out = feat + ":" + label_i_2 + "," + output[i-1]  
                                 feat_lab = feat + ":" + label_i_2 + "," + label_i_1
                                 # reward best condition
@@ -98,17 +106,29 @@ def perc_train(train_data, tagset, numepochs):
 
                                 # penalize condition
                                 feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
+                            
+                            # elif feat[0] == 'B':
+                            #     feat_out = feat + ":" + output[i-1]  
+                            #     feat_lab = feat + ":" + label_i_1
+                            #     feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+                            #     feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
+
                             else: 
                             # for U00 to U22 feature
                                 feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
                                 feat_vec[feat, label] = feat_vec[feat, label] + 1
                 elif i == 0:
-                    label_i_2 = 'B_-2'
-                    label_i_1 = 'B_-1'
-                    if output[i-1] != label_i_1 or output[i] != label:
+                    label_i_2 = '_B-2'
+                    label_i_1 = '_B-1'
+                    if output[i] != label:
                         for feat in feats:
-                            if feat[0] == 'B': 
+                            if feat[0] == 'T':
+                            # trigram case 
                                 feat = feat + ":" + label_i_2 + "," + label_i_1
+                            
+                            # elif feat[0] == 'B':
+                            # #bigram case
+                            #     feat = feat + ":" + label_i_1
 
                             feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
                             feat_vec[feat, label] = feat_vec[feat, label] + 1
