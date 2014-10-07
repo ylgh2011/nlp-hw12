@@ -41,8 +41,6 @@ def perc_train(train_data, tagset, numepochs):
     numepochs = int(1)
     default_tag = tagset[0]
     for t in range(numepochs):
-        tmp = 0
-        # Count sentence
         print 'Iteration#',t,' is processing now.'
         for (labeled_list, feat_list) in train_data:
             labels = copy.deepcopy(labeled_list)

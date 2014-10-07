@@ -142,6 +142,8 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
 
 
                 prev_list = []
+                best_weight = 0.0
+                backpointer = ('', '')
                 for (prev_u, prev_v) in viterbi[i-1]:
                     # print >>sys.stderr, "word:", word, "feat:", feat, "tag", v, "prev_tag:", prev_v, "prev_prev_tag:", prev_u
                     (prev_value, prev_backpointer) = viterbi[i-1][prev_u, prev_v]
@@ -152,9 +154,12 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
                             # Add bigram value
                             prev_tag_weight += feat_vec[prev_tag_feat, v]
 
-                    prev_list.append( (prev_tag_weight + prev_value, (prev_u, prev_v)) )
+                    if best_weight <= prev_tag_weight + prev_value:
+                        best_weight = prev_tag_weight + prev_value
+                        backpointer = (prev_u, prev_v)
+                    # prev_list.append( (prev_tag_weight + prev_value, (prev_u, prev_v)) )
 
-                (best_weight, backpointer) = sorted(prev_list, key=operator.itemgetter(0), reverse=True)[0]
+                # (best_weight, backpointer) = sorted(prev_list, key=operator.itemgetter(0), reverse=True)[0]
                 # print >>sys.stderr, "best_weight:", best_weight, "backpointer:", backpointer
 
                 if best_weight != 0.0:
@@ -309,10 +314,10 @@ def perc_write_to_file(feat_vec, filename):
 if __name__ == '__main__':
     optparser = optparse.OptionParser()
     optparser.add_option("-t", "--tagsetfile", dest="tagsetfile", default=os.path.join("data", "tagset.txt"), help="tagset that contains all the labels produced in the output, i.e. the y in \phi(x,y)")
-    # optparser.add_option("-i", "--inputfile", dest="inputfile", default=os.path.join("data", "input.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
-    # optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "input.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
-    optparser.add_option("-i", "--inputfile", dest="inputfile", default=os.path.join("data", "small.test"), help="input data, i.e. the x in \phi(x,y)")
-    optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "small.test.feats"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    optparser.add_option("-i", "--inputfile", dest="inputfile", default=os.path.join("data", "input.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
+    optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "input.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    # optparser.add_option("-i", "--inputfile", dest="inputfile", default=os.path.join("data", "small.test"), help="input data, i.e. the x in \phi(x,y)")
+    # optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "small.test.feats"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
     optparser.add_option("-m", "--modelfile", dest="modelfile", default=os.path.join("data", "default.model"), help="weights for all features stored on disk")
     (opts, _) = optparser.parse_args()
 
