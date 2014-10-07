@@ -76,31 +76,42 @@ def perc_possiblity_dict(tagset, train_data):
     unigram_dict = {}
     bigram_dict = {}
     trigram_dict = {}
-    tag_amount = {}
+    tag_amount = defaultdict(lambda: 0)
     for tag in tagset:
         unigram_dict[tag] = defaultdict(lambda: 0)
         bigram_dict[tag] = defaultdict(lambda: 0)
         trigram_dict[tag] = defaultdict(lambda: 0)
-        tag_amount[tag] = 0;
 
     for (labeled_list, feat_list) in train_data:
+        labels = copy.deepcopy(labeled_list)
+        # add in the start and end buffers for the context
+        labels.insert(0, 'B_-1 B_-1 B_-1')
+        labels.insert(0, 'B_-2 B_-2 B_-2') # first two 'words' are B_-2 B_-1
+        labels.append('B_+1 B_+1 B_+1')
+        labels.append('B_+2 B_+2 B_+2') # last two 'words' are B_+1 B_+2
+        # size of the viterbi data structure
+        N = len(labels)
         feat_index = 0;
-        for label in labeled_list:
+        for i in range(2, N-2):
             (feat_index, feats) = feats_for_word(feat_index, feat_list)
             if len(feats) == 0:
                 print >>sys.stderr, " ".join(labels), " ".join(feat_list), "\n"
                 raise ValueError("features do not align with input sentence")
 
-            fields = label.split()
+            fields = labels[i].split()
             (postag, tag) = (fields[1], fields[2])
+            pre_tag = labels[i-1].split()[2]
+            pre_pre_tag = labels[i-2].split()[2]
 
-            tag_amount[tag] += 1
+            tag_amount[postag] += 1
             unigram_dict[tag][postag] += 1
             for feat in feats:
                 if feat[:4] == "U16:":
                     bigram_dict[tag][feat[5:]] += 1
+                    bigram_dict[tag][feat[5:]+'/'+pre_tag] += 1
                 if feat[:4] == "U20:":
                     trigram_dict[tag][feat[5:]] += 1
+                    trigram_dict[tag][feat[5:]+'/'+pre_pre_tag+'/'+pre_tag] += 1
 
     return (tag_amount, unigram_dict, bigram_dict, trigram_dict)
 
@@ -118,26 +129,34 @@ def get_maxvalue(viterbi_dict):
         raise ValueError("max value tag for this word is None")
     return maxvalue
 
-def perc_possibility_test(labels, index, tag, pos_dict):
+def perc_possibility_test(labels, index, tag, prev_backpointer, backpointer, pos_dict):
     (tag_amount, unigram_dict, bigram_dict, trigram_dict) = pos_dict
-    if tag_amount[tag] == 0:
-        return 0.0
     postag = labels[index].split()[1]
+    if tag_amount[postag] == 0:
+        return 0.0
     pre_postag = labels[index-1].split()[1]
     pre_pre_postag = labels[index-2].split()[1]
     U16 = pre_postag + '/' + postag
     U20 = pre_pre_postag + '/' + U16
+    U16_tag = U16 + '/' + backpointer
+    U20_tag = U20 + '/' + prev_backpointer + '/' + backpointer
     max_possibility = 0;
     if max_possibility == 0:
-        if trigram_dict[tag][U20] > max_possibility:
-            max_possibility = trigram_dict[tag][U20]
+        if trigram_dict[tag][U20_tag] > 0:
+            max_possibility = trigram_dict[tag][U20_tag]*1.0/trigram_dict[tag][U20]
     if max_possibility == 0:
-        if bigram_dict[tag][U16] > max_possibility:
-            max_possibility = bigram_dict[tag][U16]
+        if bigram_dict[tag][U16_tag] > 0:
+            max_possibility = bigram_dict[tag][U16_tag]*1.0/bigram_dict[tag][U16]
     if max_possibility == 0:
-        if unigram_dict[tag][postag] > max_possibility:
-            max_possibility = unigram_dict[tag][postag]
-    return max_possibility*1.0/tag_amount[tag]
+        if trigram_dict[tag][U20] > 0:
+            max_possibility = trigram_dict[tag][U20]*1.0/tag_amount[postag]
+    if max_possibility == 0:
+        if bigram_dict[tag][U16] > 0:
+            max_possibility = bigram_dict[tag][U16]*1.0/tag_amount[postag]
+    if max_possibility == 0:
+        if unigram_dict[tag][postag] > 0:
+            max_possibility = unigram_dict[tag][postag]*1.0/tag_amount[postag]
+    return max_possibility
             
 def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag, pos_dict):
     # feature vector is the training result, default_tag is NP
@@ -205,11 +224,14 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag, pos_dict):
             (best_weight, backpointer) = sorted(prev_list, key=operator.itemgetter(0), reverse=True)[0]
             #print >>sys.stderr, "best_weight:", best_weight, "backpointer:", backpointer
             if best_weight <= 0.0:
-                best_weight = perc_possibility_test(labels, i, tag, pos_dict)
-                if best_weight != 0.0:
+                if tag[:2] == "I-":
+                    backpointer = 'B' + tag[1:]
+                else:
                     backpointer = last_best
-                    (prev_value, prev_backpointer) = viterbi[i-1][last_best]
-                    best_weight += prev_value
+                if i == 2:
+                    backpointer = "B_-1"
+                (prev_value, prev_backpointer) = viterbi[i-1][last_best]
+                best_weight = perc_possibility_test(labels, i, tag, prev_backpointer, backpointer, pos_dict) + prev_value
             if best_weight != 0.0:
                 viterbi[i][tag] = (best_weight, backpointer)
                 found_tag = True
