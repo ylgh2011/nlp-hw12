@@ -44,15 +44,13 @@ def perc_train(train_data, tagset, numepochs):
         tmp = 0
         # Count sentence
         print 'Iteration#',t,' is processing now.'
-        cnt = 0
         for (labeled_list, feat_list) in train_data:
-            cnt = cnt + 1
-            print 'Sentence[',cnt,'] is now processing...'
             labels = copy.deepcopy(labeled_list)
             # add in the start and end buffers for the context
             # for every sentence in the training set, iterate numepochs times
             output = perc.perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag)
-
+            # compare current output and true result
+            # correct_flag = True
             feat_index = 0
             # check word by word if the predicted tag is equal to the true tag
             for i, v in enumerate(output):
@@ -62,62 +60,47 @@ def perc_train(train_data, tagset, numepochs):
                     print >>sys.stderr, " ".join(labels), " ".join(feat_list), "\n"
                     raise ValueError("features do not align with input sentence")
                 
-                label = labels[i].split()[2]
-                if i > 1: 
-                    label_i_1 = labels[i-1].split()[2]
-                    label_i_2 = labels[i-2].split()[2]
-                    if output[i-1] != label_i_1 or output[i] != label:
-                        for feat in feats:
-                            if feat[0] == 'B': 
-                                feat_out = feat + ":" + output[i-2] + "," + output[i-1]  
-                                # feat_out is the "B:<previous output>"
-                                feat_lab = feat + ":" + label_i_2 + "," + label_i_1
-                                # feat_lab is the "B:<previous label>"
-                                # reward best condition
-                                feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+                fields = labels[i].split()
+                label = fields[2]
+                if i > 0: 
+                    label_pre = labels[i-1].split()[2]
+                    for feat in feats:
+                        if feat[0] == 'B': # for bigram feature
+                            feat_out = feat + ":" + output[i-1]  # feat_out is the "B:<previous output>"
+                            feat_lab = feat + ":" + label_pre  # feat_lab is the "B:<previous label>"
 
-                                # penalize condition
-                                feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
-                                # feat_vec[feat_out, label] = feat_vec[feat_out, label] - 1
-                                # feat_vec[feat_lab, output[i]] = feat_vec[feat_lab, output[i]] - 1
-                            else: 
-                            # for U00 to U22 feature
-                                feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
-                                feat_vec[feat, label] = feat_vec[feat, label] + 1
-                elif i == 1:
-                    # for i==0 case, all the first word in each sentence
-                    label_i_2 = 'B_-1'  # previous label will be denoted by B_-1
-                    label_i_1 = labels[i-1].split()[2]
-                    if output[i-1] != label_i_1 or output[i] != label:
-                        for feat in feats:
-                            if feat[0] == 'B': 
-                                feat_out = feat + ":" + label_i_2 + "," + output[i-1]  
-                                feat_lab = feat + ":" + label_i_2 + "," + label_i_1
-                                # reward best condition
-                                feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+                            if   output[i-1] != label_pre and output[i] != label:
+                                feat_vec[feat_out, output[i]]   -= 1
+                                feat_vec[feat_lab, output[i]]   -= 1
+                                feat_vec[feat_out, label]       += 1
+                                feat_vec[feat_lab, label]       += 1
 
-                                # penalize condition
-                                feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
-                            else: 
-                            # for U00 to U22 feature
-                                feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
-                                feat_vec[feat, label] = feat_vec[feat, label] + 1
-                elif i == 0:
-                    label_i_2 = 'B_-2'
-                    label_i_1 = 'B_-1'
-                    if output[i-1] != label_i_1 or output[i] != label:
-                        for feat in feats:
-                            if feat[0] == 'B': 
-                                feat = feat + ":" + label_i_2 + "," + label_i_1
+                            elif output[i-1] == label_pre and output[i] != label:
+                                feat_vec[feat_lab, output[i]]   -= 2
+                                feat_vec[feat_lab, label]       += 2
 
+                            elif output[i-1] != label_pre and output[i] == label:
+                                pass
+
+                            elif output[i-1] == label_pre and output[i] == label:
+                                pass
+
+                            # feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
+                            # feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+
+                            # feat_vec[feat_out, label] = feat_vec[feat_out, label] + 1
+                            # feat_vec[feat_lab, output[i]] = feat_vec[feat_lab, output[i]] - 1
+
+                        else: # for U00 to U22 feature
                             feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
                             feat_vec[feat, label] = feat_vec[feat, label] + 1
-
-
-    for (k1, k2), v in feat_vec.items():
-        if v == 0:
-            del feat_vec[k1,k2]
-
+                else:  # for i==0 case, all the first word in each sentence
+                    label_pre = 'B_-1'  # previous label will be denoted by B_-1
+                    for feat in feats:
+                        if feat[0] == 'B':  # bigram feature case
+                            feat = feat + ":" + label_pre
+                        feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
+                        feat_vec[feat, label] = feat_vec[feat, label] + 1
 
     # please limit the number of iterations of training to n iterations
     return feat_vec
