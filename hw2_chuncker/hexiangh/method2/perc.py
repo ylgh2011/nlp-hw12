@@ -49,12 +49,13 @@ def read_labeled_data(labelfile, featfile):
     # filter out word with low frequency
     word_set = []
     for k,v in word_dict.iteritems():
-        if v >= 10 and k != '_':
+        if v >= 600 and k != '_':
             # since '_' is used for separation, we can't use it directly
             word_set.append(k)
             # print 'Word[',k,']:',v
     
 
+    postag_list = []
     # Load data into structure
     while True:
         labeled_list = []
@@ -67,25 +68,81 @@ def read_labeled_data(labelfile, featfile):
             if lab_w == '': break
             lab_w = lab_w.strip()
             # specialize label 
-            # fs(<wi, pi, ti>) = / <wi, pi, wi*pi*ti>,  if wi belongs to Ws
-            #                    \ <pi, pi*ti>,         otherwise
+            # fs(<wi, pi, ti>) = / <wi, wi_pi, wi_pi_ti>,   if wi belongs to Ws
+            #                    \ <wi, pi, pi_ti>,         otherwise
             fields = lab_w.split()
+            postag = ''
             if len(fields) == 3:
                 if fields[0] in word_set:
+                    postag = fields[0] + '_' + fields[1]
                     tag = fields[0] + '_' + fields[1] + '_' + fields[2]
                     lab_w = fields[0] + ' ' + fields[1] + ' ' + tag
                 else:
+                    postag = fields[1]
                     tag = fields[1] + '_' + fields[2]
                     lab_w = fields[0] + ' ' + fields[1] + ' ' + tag
             labeled_list.append(lab_w)
+            postag_list.append(postag)
 
+        index = -1
         while True:
             feat_line = feat.readline().strip()
             if feat_line == '\n': break
             if feat_line == '': break
             (feat_keyword, feat_w) = feat_line.split() # throw away the FEAT keyword
             feat_w = feat_w.strip()
+
+            feat_w_prefix = feat_w[0:3]
+
+            if feat_w_prefix == 'U00':
+                index += 1
+
+            postag_n2 = postag_list[index - 2]
+            if index == 0:
+                postag_n2 = '_B-2'
+            if index == 1:
+                postag_n2 = '_B-1'
+            postag_n1 = postag_list[index - 1] if index > 0 else '_B-1'
+            postag_0  = postag_list[index]
+            postag_p1 = postag_list[index + 1] if index < len(postag_list) - 1 else '_B+1'
+            
+            postag_p2 = ''
+            if index + 2 < len(postag_list):
+                postag_p2 = postag_list[index + 2]
+            else:
+                if index + 2 == len(postag_list):
+                    postag_p2 = '_B+1'
+                if index + 2 == len(postag_list) + 1:
+                    postag_p2 = '_B+2'
+
+            if   feat_w_prefix == 'U10':
+                feat_w = 'U10:' + postag_n2
+            elif feat_w_prefix == 'U11':
+                feat_w = 'U11:' + postag_n1
+            elif feat_w_prefix == 'U12':
+                feat_w = 'U12:' + postag_0 + 'q'
+            elif feat_w_prefix == 'U13':
+                feat_w = 'U13:' + postag_p1
+            elif feat_w_prefix == 'U14':
+                feat_w = 'U14:' + postag_p2
+            elif feat_w_prefix == 'U15':
+                feat_w = 'U15:' + postag_n2 + '/' + postag_n1
+            elif feat_w_prefix == 'U16':
+                feat_w = 'U16:' + postag_n1 + '/' + postag_0
+            elif feat_w_prefix == 'U17':
+                feat_w = 'U17:' + postag_0 + '/' + postag_p1
+            elif feat_w_prefix == 'U18':
+                feat_w = 'U18:' + postag_p1 + '/' + postag_p2
+            elif feat_w_prefix == 'U20':
+                feat_w = 'U20:' + postag_n2 + '/' + postag_n1 + '/' + postag_0
+            elif feat_w_prefix == 'U21':
+                feat_w = 'U21:' + postag_n1 + '/' + postag_0 + '/' + postag_p1
+            elif feat_w_prefix == 'U22':
+                feat_w = 'U22:' + postag_0 + '/' + postag_p1 + '/' + postag_p2
+            
             feat_list.append(feat_w)
+
+
         if len(labeled_list) == 0:
             if len(feat_list) != 0:
                 print >>sys.stderr, "files do not align"
