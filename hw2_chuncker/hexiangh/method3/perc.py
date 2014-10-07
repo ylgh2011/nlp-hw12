@@ -158,11 +158,11 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag):
                                 # add trigram value
                                 prev_tag_weight += feat_vec[prev_tag_feat, v]
 
-                        # if has_bigram_feat:
-                        #     prev_tag_feat = "B:" + prev_v
-                        #     if (prev_tag_feat, v) in feat_vec:
-                        #         # add bigram value
-                        #         prev_tag_weight += feat_vec[prev_tag_feat, v]
+                        if has_bigram_feat:
+                            prev_tag_feat = "B:" + prev_v
+                            if (prev_tag_feat, v) in feat_vec:
+                                # add bigram value
+                                prev_tag_weight += feat_vec[prev_tag_feat, v]
                         
 
                         if best_weight <= prev_tag_weight + prev_value:

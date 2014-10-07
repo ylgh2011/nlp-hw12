@@ -80,12 +80,12 @@ def perc_train(train_data, tagset, numepochs):
                                 # penalize condition
                                 feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
 
-                            # elif feat[0] == 'B' and output[i-1] != label_i_1:
-                            #     # bigram case
-                            #     feat_out = feat + ":" + output[i-1]  
-                            #     feat_lab = feat + ":" + label_i_1
-                            #     feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
-                            #     feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
+                            elif feat[0] == 'B' and output[i-1] != label_i_1:
+                                # bigram case
+                                feat_out = feat + ":" + output[i-1]  
+                                feat_lab = feat + ":" + label_i_1
+                                feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+                                feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
 
                             else: 
                             # for U00 to U22 feature
@@ -107,11 +107,11 @@ def perc_train(train_data, tagset, numepochs):
                                 # penalize condition
                                 feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
                             
-                            # elif feat[0] == 'B':
-                            #     feat_out = feat + ":" + output[i-1]  
-                            #     feat_lab = feat + ":" + label_i_1
-                            #     feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
-                            #     feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
+                            elif feat[0] == 'B':
+                                feat_out = feat + ":" + output[i-1]  
+                                feat_lab = feat + ":" + label_i_1
+                                feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+                                feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
 
                             else: 
                             # for U00 to U22 feature
@@ -126,12 +126,15 @@ def perc_train(train_data, tagset, numepochs):
                             # trigram case 
                                 feat = feat + ":" + label_i_2 + "," + label_i_1
                             
-                            # elif feat[0] == 'B':
-                            # #bigram case
-                            #     feat = feat + ":" + label_i_1
+                            elif feat[0] == 'B':
+                            #bigram case
+                                feat = feat + ":" + label_i_1
 
                             feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
                             feat_vec[feat, label] = feat_vec[feat, label] + 1
+
+        filename = 'mid_model_iter' + str(t)
+        perc.perc_write_to_file(feat_vec, filename)
 
 
     for (k1, k2), v in feat_vec.items():
