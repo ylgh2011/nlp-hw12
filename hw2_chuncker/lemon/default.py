@@ -38,7 +38,7 @@ def perc_train(train_data, tagset, numepochs, pos_dict):
     if len(tagset) <= 0:
         raise ValueError("Empty tagset")
 
-    numepochs = int(1)
+    numepochs = int(20)
     default_tag = tagset[0]
     for t in range(numepochs):
         tmp = 0
@@ -83,6 +83,8 @@ def perc_train(train_data, tagset, numepochs, pos_dict):
                             feat = feat + ":" + label_pre
                         feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
                         feat_vec[feat, label] = feat_vec[feat, label] + 1
+
+        perc.perc_write_to_file(feat_vec, 'model_' + str(t))
 
     # please limit the number of iterations of training to n iterations
     return feat_vec

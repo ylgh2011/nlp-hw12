@@ -174,7 +174,7 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag, pos_dict):
     # Set up the data structure for viterbi search
     viterbi = {}
     for i in range(0, N):
-        viterbi[i] = {} 
+        viterbi[i] = {}
         # each column contains for each tag: a (value, backpointer) tuple
 
 
@@ -213,6 +213,8 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag, pos_dict):
             prev_list = []
             for prev_tag in viterbi[i-1]:
                 #print >>sys.stderr, "word:", word, "feat:", feat, "tag:", tag, "prev_tag:", prev_tag
+                if (i>2 and tag[:2]=="I-" and prev_tag[2:]!=tag[2:]) or (i==2 and tag[:2]=="I-"):
+                    prev_list.append((0.0, prev_tag))
                 (prev_value, prev_backpointer) = viterbi[i-1][prev_tag]
                 prev_tag_weight = weight
                 if has_bigram_feat:
@@ -224,14 +226,28 @@ def perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag, pos_dict):
             (best_weight, backpointer) = sorted(prev_list, key=operator.itemgetter(0), reverse=True)[0]
             #print >>sys.stderr, "best_weight:", best_weight, "backpointer:", backpointer
             if best_weight <= 0.0:
-                if tag[:2] == "I-":
-                    backpointer = 'B' + tag[1:]
-                else:
-                    backpointer = last_best
-                if i == 2:
-                    backpointer = "B_-1"
-                (prev_value, prev_backpointer) = viterbi[i-1][last_best]
-                best_weight = perc_possibility_test(labels, i, tag, prev_backpointer, backpointer, pos_dict) + prev_value
+                def best_backpointer():
+                    if tag[:2] == "I-":
+                        b_tag = 'B' + tag[1:]
+                        if (tag in viterbi[i-1]) and (b_tag in viterbi[i-1]):
+                            if viterbi[i-1][tag][0] >= viterbi[i-1][b_tag][0]:
+                                bp = tag;
+                            else:
+                                bp = b_tag
+                        elif tag in viterbi[i-1]:
+                            bp = tag
+                        elif b_tag in viterbi[i-1]:
+                            bp = b_tag
+                        else:
+                            bp = ""
+                    else:
+                        bp = last_best
+                    return bp
+                
+                backpointer = best_backpointer()
+                if backpointer != "":
+                    (prev_value, prev_backpointer) = viterbi[i-1][backpointer]
+                    best_weight = perc_possibility_test(labels, i, tag, prev_backpointer, backpointer, pos_dict) + prev_value
             if best_weight != 0.0:
                 viterbi[i][tag] = (best_weight, backpointer)
                 found_tag = True
