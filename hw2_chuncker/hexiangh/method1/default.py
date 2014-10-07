@@ -47,8 +47,7 @@ def perc_train(train_data, tagset, numepochs):
         cnt = 0
         for (labeled_list, feat_list) in train_data:
             cnt = cnt + 1
-            if cnt % 1000 == 0:
-                print 'current status: ', str(round(100*cnt/9000.0,2)),'%'
+            print 'Sentence[',cnt,'] is now processing...'
             labels = copy.deepcopy(labeled_list)
             # add in the start and end buffers for the context
             # for every sentence in the training set, iterate numepochs times
@@ -115,29 +114,9 @@ def perc_train(train_data, tagset, numepochs):
                             feat_vec[feat, label] = feat_vec[feat, label] + 1
 
 
-
-
-    # delete dictionary terms with value of 0 and regularize the weight
-    # cnt = dict()
-    # for (key1, key2), val in feat_vec.iteritems():
-    #     if val != 0:
-    #         if key1[0] == 'B':
-    #             if cnt.get(key1[0], -1) != -1: 
-    #                 cnt[key1[0]] = cnt[key1[0]] + 1
-    #             else: 
-    #                 cnt[key1[0]] = 0
-    #         else:
-    #             if cnt.get(key1[:3], -1) != -1: 
-    #                 cnt[key1[:3]] = cnt[key1[:3]] + 1
-    #             else: 
-    #                 cnt[key1[:3]] = 0
-
-    # for (key1, key2), val in feat_vec.iteritems():
-    #     if key1[0] == 'B':
-    #         feat_vec[key1, key2] = feat_vec[key1, key2]/cnt[key1[0]]
-    #     elif key1[:3] in cnt:
-    #         feat_vec[key1, key2] = feat_vec[key1, key2]/cnt[key1[:3]]
-
+    for (k1, k2), v in feat_vec.items():
+        if v == 0:
+            del feat_vec[k1,k2]
 
 
     # please limit the number of iterations of training to n iterations
