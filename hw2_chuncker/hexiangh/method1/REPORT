@@ -1,6 +1,7 @@
 # This submission file contains 3 different versions of implementation, which are based on different algorithms
 ## Method 1 - average perceptron(web submitted)
-* 
+* Use the model described in "syntax-parsing-survey-2011" 38 pages
+
 ## Method 2 - trigram based viterbi algorithm
 * 
 ## Method 3 - baseline method
