@@ -1,40 +1,37 @@
 # This submission file contains 3 different versions of implementation, which are based on different algorithms
 
-## Method 1 - baseline method
+## Method 1 - baseline method(submitted)
 
 For the baseline method, we use the Viterbi Algorithm to imply the HMM. In each training, we use the exised model to predict the output. If the output is correct, we will award the features that result in that output. If the output is wrong, we will punish those features. As the result, the result will be relative accurate for the input data. 
 To improve the baseline, we add the awarding and punishment amount for bigram to 2. That rises our score by 1%.
-Besides, we modified the perc file to rule out the unmatched bigram condition (B-NP I-PP for example) and using the postag to predict unshown words. But.f the result for this modification does not get better, so we still rely on the origin perc file.
+Besides, we modified the perc file to rule out the unmatched bigram condition (B-NP I-PP for example) and using the postag to predict unshown words. But the result for this modification does not get better, so we still rely on the origin perc file.
 
 
-## Method 2 - trigram viterbi algorithm
+## Method 2 - trigram viterbi algorithm(submitted)
 
 The trigram method uses a 2 dimension viterbi algorithm with dynamic programing, and the perc_train algorithm is inherited from the baseline method. The detailed algorithm is as following:
 
 function Viterbi():
-	for k = 1...n:
-		for u belongs to Sk-1:
-			for v belongs to Sk:
-				viterbi(k, u, v) = max( 
-					viterbi(k-1, u, v) + q(v| w, u) + Phi(v)
-				)
+    for k = 1...n:
+        for u belongs to Sk-1:
+            for v belongs to Sk:
+                viterbi(k, u, v) = max( 
+                    viterbi(k-1, u, v) + q(v| w, u) + Phi(v), 	if has trigram
+                    viterbi(k-1, u, v) + q(v| u) + Phi(v)		otherwise
+                )
 
-		...
-	// The following part are similar to the original viterbi algorithm
+        ...
+    // The following part are similar to the original viterbi algorithm
 
 The performance of this trigram model is not good. It is extremely slow since it give N^3 time complexity. And the F1 score of testing set is similar to the improved baseline method within the first serveral iterations. Due to these reasons, we didn't apply this method in the end
 
-## Method 3 - Average perceptron algorithm
-
-Our code of this method fails with some bugs and which are hard to fix. 
-
-## Method 4 - Specialized Data Representation Method
+## Method 3 - Specialized Data Representation Method(not submiited)
 
 According to the paper "Voting between Multiple Data Representations for Text Chunking", we apply the specialized data representation method it mentioned. However, although it converges really fast and gives a high score for the first 3 iteration, the final result is still under the optimized baseline method.
 
+## Method 4 - Average perceptron algorithm(failed)
 
-
-
+Our code of this method fails with some bugs and which are hard to fix. 
 
 
 # Issues distribution

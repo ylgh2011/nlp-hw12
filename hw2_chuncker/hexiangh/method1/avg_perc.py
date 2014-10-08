@@ -33,10 +33,11 @@ import perc
 import sys, optparse, os, copy
 from collections import defaultdict
 
+# def tau_update_vect(tau_feat_vec, feat_vec, avg_feat_vec):
+
 def perc_train(train_data, tagset, numepochs):
     feat_vec = defaultdict(float)
     avg_feat_vec = defaultdict(float)
-    tau_feat_vec = dict()
     # insert your code here
     if len(tagset) <= 0:
         raise ValueError("Empty tagset")
@@ -47,6 +48,7 @@ def perc_train(train_data, tagset, numepochs):
     for t in range(numepochs):
         print 'Iteration#',t,' is processing now.'
         for j, (labeled_list, feat_list) in enumerate(train_data):
+            tau_feat_vec = dict()
             labels = copy.deepcopy(labeled_list)
             # add in the start and end buffers for the context
             # for every sentence in the training set, iterate numepochs times
@@ -93,8 +95,8 @@ def perc_train(train_data, tagset, numepochs):
                                     avg_feat_vec[feat_out, label]       += 1.0
                                     avg_feat_vec[feat_lab, label]       += 1.0
 
-                                    tau_feat_vec[feat_out] = (j, t)
-                                    tau_feat_vec[feat_lab] = (j, t)
+                                    tau_feat_vec[feat_out] = (i, t)
+                                    tau_feat_vec[feat_lab] = (i, t)
 
                                 elif output[i-1] == label_pre and output[i] != label:
 
@@ -111,13 +113,7 @@ def perc_train(train_data, tagset, numepochs):
                                     avg_feat_vec[feat_lab, output[i]]   -= 2.0
                                     avg_feat_vec[feat_lab, label]       += 2.0
                                     
-                                    tau_feat_vec[feat_lab] = (j, t)
-
-                                elif output[i-1] != label_pre and output[i] == label:
-                                    pass
-
-                                elif output[i-1] == label_pre and output[i] == label:
-                                    pass
+                                    tau_feat_vec[feat_lab] = (i, t)
 
                             else: # for U00 to U22 feature
 
@@ -134,7 +130,7 @@ def perc_train(train_data, tagset, numepochs):
                                 avg_feat_vec[feat, label] += 1.0
 
                                 # update vector
-                                tau_feat_vec[feat] = (j, t)
+                                tau_feat_vec[feat] = (i, t)
 
 
                     else:  # for i==0 case, all the first word in each sentence
@@ -158,7 +154,7 @@ def perc_train(train_data, tagset, numepochs):
                             avg_feat_vec[feat, output[i]] -= 1.0
                             avg_feat_vec[feat, label] += 1.0
 
-                            tau_feat_vec[feat] = (j, t)
+                            tau_feat_vec[feat] = (i, t)
 
 
             else:
