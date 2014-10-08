@@ -227,7 +227,7 @@ def perc_train(train_data, tagset, numepochs):
                                     pass
 
                             else: # for U00 to U22 feature
-
+                            
                                 if output[i] != label and feat in tau_feat_vec:
                                     (js, ts) = tau_feat_vec[feat]
                                     for (feature, tag) in avg_feat_vec.keys():
@@ -261,11 +261,7 @@ def perc_train(train_data, tagset, numepochs):
                             avg_feat_vec[feat, output[i]] -= 1.0
                             avg_feat_vec[feat, label] += 1.0
 
-        mid_vec = copy.deepcopy(avg_feat_vec)
-        filename = 'mid_model_' + str(t + 1)
-        for key in mid_vec.keys():
-            mid_vec[key] = mid_vec[key]/float((t + 1)*m)
-        perc.perc_write_to_file(mid_vec, filename)
+
         # end of iteration
 
     # averaging perceptron
