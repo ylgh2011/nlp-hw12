@@ -73,6 +73,7 @@ def perc_train(train_data, tagset, numepochs):
                                 feat_lab = feat + ":" + label_pre  # feat_lab is the "B:<previous label>"
 
                                 if   output[i-1] != label_pre and output[i] != label:
+
                                     if (feat, output[i]) in tau_feat_vec:
                                         (js, ts) = tau_feat_vec[feat, output[i]]
                                         avg_feat_vec[feat, output[i]] = avg_feat_vec[feat, output[i]] + feat[feat, output[i]] * (t*m + j - ts*m - js)
@@ -101,6 +102,7 @@ def perc_train(train_data, tagset, numepochs):
                                     tau_feat_vec[feat_lab, label]     = (j, t)
 
                                 elif output[i-1] == label_pre and output[i] != label:
+
                                     if (feat, output[i]) in tau_feat_vec:
                                         (js, ts) = tau_feat_vec[feat, output[i]]
                                         avg_feat_vec[feat, output[i]] = avg_feat_vec[feat, output[i]] + feat[feat, output[i]] * (t*m + j - ts*m - js)
@@ -126,13 +128,14 @@ def perc_train(train_data, tagset, numepochs):
 
                             else: # for U00 to U22 feature
 
-                                if (feat, output[i]) in tau_feat_vec:
-                                    (js, ts) = tau_feat_vec[feat, output[i]]
-                                    avg_feat_vec[feat, output[i]] = avg_feat_vec[feat, output[i]] + feat[feat, output[i]] * (t*m + j - ts*m - js)
+                                if output[i] != label:
+                                    if (feat, output[i]) in tau_feat_vec:
+                                        (js, ts) = tau_feat_vec[feat, output[i]]
+                                        avg_feat_vec[feat, output[i]] = avg_feat_vec[feat, output[i]] + feat[feat, output[i]] * (t*m + j - ts*m - js)
 
-                                if (feat, label) in tau_feat_vec:
-                                    (js, ts) = tau_feat_vec[feat, label]
-                                    avg_feat_vec[feat, label] = avg_feat_vec[feat, label] + feat[feat, label] * (t*m + j - ts*m - js)
+                                    if (feat, label) in tau_feat_vec:
+                                        (js, ts) = tau_feat_vec[feat, label]
+                                        avg_feat_vec[feat, label] = avg_feat_vec[feat, label] + feat[feat, label] * (t*m + j - ts*m - js)
 
                                 feat_vec[feat, output[i]] -= 1.0
                                 feat_vec[feat, label] += 1.0
@@ -153,13 +156,14 @@ def perc_train(train_data, tagset, numepochs):
                             if feat[0] == 'B':  # bigram feature case
                                 feat = feat + ":" + label_pre
 
-                            if (feat, output[i]) in tau_feat_vec:
-                                (js, ts) = tau_feat_vec[feat, output[i]]
-                                avg_feat_vec[feat, output[i]] = avg_feat_vec[feat, output[i]] + feat[feat, output[i]] * (t*m + j - ts*m - js)
+                            if output[i] != label:
+                                if (feat, output[i]) in tau_feat_vec:
+                                    (js, ts) = tau_feat_vec[feat, output[i]]
+                                    avg_feat_vec[feat, output[i]] = avg_feat_vec[feat, output[i]] + feat[feat, output[i]] * (t*m + j - ts*m - js)
 
-                            if (feat, label) in tau_feat_vec:
-                                (js, ts) = tau_feat_vec[feat, label]
-                                avg_feat_vec[feat, label] = avg_feat_vec[feat, label] + feat[feat, label] * (t*m + j - ts*m - js)
+                                if (feat, label) in tau_feat_vec:
+                                    (js, ts) = tau_feat_vec[feat, label]
+                                    avg_feat_vec[feat, label] = avg_feat_vec[feat, label] + feat[feat, label] * (t*m + j - ts*m - js)
 
                             feat_vec[feat, output[i]] -= 1.0
                             feat_vec[feat, label] += 1.0
@@ -192,6 +196,7 @@ def perc_train(train_data, tagset, numepochs):
                                 feat_lab = feat + ":" + label_pre  # feat_lab is the "B:<previous label>"
 
                                 if   output[i-1] != label_pre and output[i] != label:
+
                                     if (feat, output[i]) in tau_feat_vec:
                                         (js, ts) = tau_feat_vec[feat, output[i]]
                                         avg_feat_vec[feat, output[i]] = avg_feat_vec[feat, output[i]] + feat[feat, output[i]] * (numepochs*m + m - ts*m - js)
@@ -213,6 +218,7 @@ def perc_train(train_data, tagset, numepochs):
                                     avg_feat_vec[feat_lab, label]       += 1.0
 
                                 elif output[i-1] == label_pre and output[i] != label:
+
                                     if (feat, output[i]) in tau_feat_vec:
                                         (js, ts) = tau_feat_vec[feat, output[i]]
                                         avg_feat_vec[feat, output[i]] = avg_feat_vec[feat, output[i]] + feat[feat, output[i]] * (numepochs*m + m - ts*m - js)
@@ -235,13 +241,14 @@ def perc_train(train_data, tagset, numepochs):
                                     pass
 
                             else: # for U00 to U22 feature
-                                if (feat, output[i]) in tau_feat_vec:
-                                    (js, ts) = tau_feat_vec[feat, output[i]]
-                                    avg_feat_vec[feat, output[i]] = avg_feat_vec[feat, output[i]] + feat[feat, output[i]] * (numepochs*m + m - ts*m - js)
+                                if output[i] != label: 
+                                    if (feat, output[i]) in tau_feat_vec:
+                                        (js, ts) = tau_feat_vec[feat, output[i]]
+                                        avg_feat_vec[feat, output[i]] = avg_feat_vec[feat, output[i]] + feat[feat, output[i]] * (numepochs*m + m - ts*m - js)
 
-                                if (feat, label) in tau_feat_vec:
-                                    (js, ts) = tau_feat_vec[feat, label]
-                                    avg_feat_vec[feat, label] = avg_feat_vec[feat, label] + feat[feat, label] * (numepochs*m + m - ts*m - js)
+                                    if (feat, label) in tau_feat_vec:
+                                        (js, ts) = tau_feat_vec[feat, label]
+                                        avg_feat_vec[feat, label] = avg_feat_vec[feat, label] + feat[feat, label] * (numepochs*m + m - ts*m - js)
 
                                 feat_vec[feat, output[i]] -= 1.0
                                 feat_vec[feat, label] += 1.0
@@ -256,13 +263,14 @@ def perc_train(train_data, tagset, numepochs):
                             if feat[0] == 'B':  # bigram feature case
                                 feat = feat + ":" + label_pre
                             
-                            if (feat, output[i]) in tau_feat_vec:
-                                (js, ts) = tau_feat_vec[feat, output[i]]
-                                avg_feat_vec[feat, output[i]] = avg_feat_vec[feat, output[i]] + feat[feat, output[i]] * (numepochs*m + m - ts*m - js)
+                            if output[i] != label:
+                                if (feat, output[i]) in tau_feat_vec:
+                                    (js, ts) = tau_feat_vec[feat, output[i]]
+                                    avg_feat_vec[feat, output[i]] = avg_feat_vec[feat, output[i]] + feat[feat, output[i]] * (numepochs*m + m - ts*m - js)
 
-                            if (feat, label) in tau_feat_vec:
-                                (js, ts) = tau_feat_vec[feat, label]
-                                avg_feat_vec[feat, label] = avg_feat_vec[feat, label] + feat[feat, label] * (numepochs*m + m - ts*m - js)
+                                if (feat, label) in tau_feat_vec:
+                                    (js, ts) = tau_feat_vec[feat, label]
+                                    avg_feat_vec[feat, label] = avg_feat_vec[feat, label] + feat[feat, label] * (numepochs*m + m - ts*m - js)
 
                             feat_vec[feat, output[i]] -= 1.0
                             feat_vec[feat, label] += 1.0
