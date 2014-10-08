@@ -33,29 +33,70 @@ import perc
 import sys, optparse, os, copy
 from collections import defaultdict
 
-# def tau_update_vect(tau_feat_vec, feat_vec, avg_feat_vec):
+def lazy_update_vect(feat, tag, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m):
+    if (feat, tag) in tau_feat_vec:
+        (js, ts) = tau_feat_vec[feat, tag]
+        if (feat, tag) in avg_feat_vec:
+            # print "Updating ", feat, ",",tag
+            avg_feat_vec[feat, tag] = avg_feat_vec[feat, tag] + feat_vec[feat, tag] * ( (t - ts) * m + (j - js))
+
+def final_lazy_update_vect(tau_feat_vec, feat_vec, avg_feat_vec, t, j, m):
+    for (feat, tag) in tau_feat_vec:
+        if (feat, tag) in feat_vec:
+            (js, ts) = tau_feat_vec[feat, tag]
+            avg_feat_vec[feat, tag] = avg_feat_vec[feat, tag] + feat_vec[feat, tag] * ( (t - ts) * m + (j - js))
+
+
+def update_bigram_vect(feat_vec, avg_feat_vec, feat_out, feat_lab, output, label):
+    feat_vec[feat_out, output] -= 1.0
+    feat_vec[feat_lab, output] -= 1.0
+    feat_vec[feat_out, label] += 1.0
+    feat_vec[feat_lab, label] += 1.0
+
+    # update avg feature vector
+    avg_feat_vec[feat_out, output] -= 1.0
+    avg_feat_vec[feat_lab, output] -= 1.0
+    avg_feat_vec[feat_out, label] += 1.0
+    avg_feat_vec[feat_lab, label] += 1.0
+
+
+    # this function have equavalent effect to the following routine when feat_out = feat_lab 
+    # feat_vec[feat_lab, output[i]] -= 2.0
+    # feat_vec[feat_lab, label] += 2.0
+
+    # avg_feat_vec[feat_lab, output[i]] -= 2.0
+    # avg_feat_vec[feat_lab, label] += 2.0
+
+def update_unigram_vect(feat_vec, avg_feat_vec, feat, output,label):
+    feat_vec[feat, output] -= 1.0
+    feat_vec[feat, label] += 1.0
+
+    avg_feat_vec[feat, output] -= 1.0
+    avg_feat_vec[feat, label] += 1.0
 
 def perc_train(train_data, tagset, numepochs):
     feat_vec = defaultdict(float)
     avg_feat_vec = defaultdict(float)
+    tau_feat_vec = dict()
+
     # insert your code here
     if len(tagset) <= 0:
         raise ValueError("Empty tagset")
 
-    numepochs = int(2)
+    numepochs = int(3)
     default_tag = tagset[0]
     m = len(train_data) # length of training data
     for t in range(numepochs):
         print 'Iteration#',t,' is processing now.'
         for j, (labeled_list, feat_list) in enumerate(train_data):
-            tau_feat_vec = dict()
             labels = copy.deepcopy(labeled_list)
+            print 'sentence[',j,']'
             # add in the start and end buffers for the context
             # for every sentence in the training set, iterate numepochs times
             output = perc.perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag)
             # compare current output and true result
-            # correct_flag = True
-            if j != m or t != numepochs - 1:
+
+            if j != m - 1 or t != numepochs - 1:
                 feat_index = 0
                 # check word by word if the predicted tag is equal to the true tag
                 for i, v in enumerate(output):
@@ -74,91 +115,67 @@ def perc_train(train_data, tagset, numepochs):
                                 feat_out = feat + ":" + output[i-1]  # feat_out is the "B:<previous output>"
                                 feat_lab = feat + ":" + label_pre  # feat_lab is the "B:<previous label>"
 
-                                if   output[i-1] != label_pre and output[i] != label:
+                                if output[i] != label:
 
-                                    if feat in tau_feat_vec:
-                                        (js, ts) = tau_feat_vec[feat]
-                                        for tag in tagset:
-                                            if (feat, tag) in avg_feat_vec:
-                                                avg_feat_vec[feat, tag] = avg_feat_vec[feat, tag] + feat_vec[feat, tag] * (t*m + j - ts*m - js)
+                                    # laze update the tau vector value
+                                    lazy_update_vect(feat_out, output[i], tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                    lazy_update_vect(feat_out, label, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                    lazy_update_vect(feat_lab, label, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                    lazy_update_vect(feat_lab, output[i], tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
 
+                                    # update original feature vector, if feat_out == feat_lab perform 2nd type updating
+                                    update_bigram_vect(feat_vec, avg_feat_vec, feat_out, feat_lab, output[i], label)
 
-                                    # update original feature vector
-                                    feat_vec[feat_out, output[i]]   -= 1.0
-                                    feat_vec[feat_lab, output[i]]   -= 1.0
-                                    feat_vec[feat_out, label]       += 1.0
-                                    feat_vec[feat_lab, label]       += 1.0
-
-                                    # update avg feature vector
-                                    avg_feat_vec[feat_out, output[i]]   -= 1.0
-                                    avg_feat_vec[feat_lab, output[i]]   -= 1.0
-                                    avg_feat_vec[feat_out, label]       += 1.0
-                                    avg_feat_vec[feat_lab, label]       += 1.0
-
-                                    tau_feat_vec[feat_out] = (i, t)
-                                    tau_feat_vec[feat_lab] = (i, t)
-
-                                elif output[i-1] == label_pre and output[i] != label:
-
-                                    if feat in tau_feat_vec:
-                                        (js, ts) = tau_feat_vec[feat]
-                                        for tag in tagset:
-                                            if (feat, tag) in avg_feat_vec:
-                                                avg_feat_vec[feat, tag] = avg_feat_vec[feat, tag] + feat_vec[feat, tag] * (t*m + j - ts*m - js)
+                                    # if feat_out == feat_lab then update twice for the same tau
+                                    tau_feat_vec[feat_out, output[i]] = (j, t)
+                                    tau_feat_vec[feat_out, label] = (j, t)
+                                    tau_feat_vec[feat_lab, output[i]] = (j, t)
+                                    tau_feat_vec[feat_lab, label] = (j, t)
 
 
-                                    feat_vec[feat_lab, output[i]]   -= 2.0
-                                    feat_vec[feat_lab, label]       += 2.0
-
-                                    avg_feat_vec[feat_lab, output[i]]   -= 2.0
-                                    avg_feat_vec[feat_lab, label]       += 2.0
-                                    
-                                    tau_feat_vec[feat_lab] = (i, t)
-
-                            else: # for U00 to U22 feature
-
-                                if output[i] != label and feat in tau_feat_vec:
-                                    (js, ts) = tau_feat_vec[feat]
-                                    for tag in tagset:
-                                        if (feat, tag) in avg_feat_vec:
-                                            avg_feat_vec[feat, tag] = avg_feat_vec[feat, tag] + feat_vec[feat, tag] * (t*m + j - ts*m - js)
-
-                                feat_vec[feat, output[i]] -= 1.0
-                                feat_vec[feat, label] += 1.0
-
-                                avg_feat_vec[feat, output[i]] -= 1.0
-                                avg_feat_vec[feat, label] += 1.0
+                            elif output[i] != label:
+                                lazy_update_vect(feat, output[i], tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                lazy_update_vect(feat, label, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                
+                                # for U00 to U22 feature                                
+                                update_unigram_vect(feat_vec, avg_feat_vec, feat, output[i],label)
 
                                 # update vector
-                                tau_feat_vec[feat] = (i, t)
+                                tau_feat_vec[feat, output[i]] = (j, t)
+                                tau_feat_vec[feat, label] = (j, t)
 
 
                     else:  # for i==0 case, all the first word in each sentence
                         label_pre = 'B_-1'  # previous label will be denoted by B_-1
                         for feat in feats:
-
-
-                            if feat[0] == 'B':  # bigram feature case
+                            if feat[0] == 'B' and output[i] != label:
+                                # bigram feature case
                                 feat = feat + ":" + label_pre
 
-                            if output[i] != label and feat in tau_feat_vec:
-                                (js, ts) = tau_feat_vec[feat]
-                                for tag in tagset:
-                                    if (feat, tag) in avg_feat_vec:
-                                        avg_feat_vec[feat, tag] = avg_feat_vec[feat, tag] + feat_vec[feat, tag] * (t*m + j - ts*m - js)
+                                lazy_update_vect(feat, output[i], tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)  
+                                lazy_update_vect(feat, label, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)  
+
+                                update_bigram_vect(feat_vec, avg_feat_vec, feat, feat, output[i], label)
+
+                                tau_feat_vec[feat, label] = (j, t)
+                                tau_feat_vec[feat, output[i]] = (j, t)
 
 
-                            feat_vec[feat, output[i]] -= 1.0
-                            feat_vec[feat, label] += 1.0
+                            elif output[i] != label:
+                                lazy_update_vect(feat, output[i], tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                lazy_update_vect(feat, label, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                
+                                # for U00 to U22 feature
+                                update_unigram_vect(feat_vec, avg_feat_vec, feat, output[i],label)
 
-                            avg_feat_vec[feat, output[i]] -= 1.0
-                            avg_feat_vec[feat, label] += 1.0
-
-                            tau_feat_vec[feat] = (i, t)
+                                tau_feat_vec[feat, output[i]] = (j, t)
+                                tau_feat_vec[feat, label] = (j, t)
 
 
             else:
-                # last sentence of each iteration
+                final_lazy_update_vect(tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+
+                # special case for the last sentence 
                 feat_index = 0
                 # check word by word if the predicted tag is equal to the true tag
                 for i, v in enumerate(output):
@@ -168,103 +185,41 @@ def perc_train(train_data, tagset, numepochs):
                         print >>sys.stderr, " ".join(labels), " ".join(feat_list), "\n"
                         raise ValueError("features do not align with input sentence")
                     
-                    fields = labels[i].split()
-                    label = fields[2]
+                    label = labels[i].split()[2]
                     if i > 0: 
                         label_pre = labels[i-1].split()[2]
                         for feat in feats:
+
                             if feat[0] == 'B': # for bigram feature
                                 feat_out = feat + ":" + output[i-1]  # feat_out is the "B:<previous output>"
                                 feat_lab = feat + ":" + label_pre  # feat_lab is the "B:<previous label>"
-
-                                if   output[i-1] != label_pre and output[i] != label:
-
-                                    if feat in tau_feat_vec:
-                                        (js, ts) = tau_feat_vec[feat]
-                                        for tag in tagset:
-                                            if (feat, tag) in avg_feat_vec:
-                                                avg_feat_vec[feat, tag] = avg_feat_vec[feat, tag] + feat_vec[feat, tag] * (t*m + j - ts*m - js)
-
+                                if output[i] != label:
                                     # update original feature vector
-                                    feat_vec[feat_out, output[i]]   -= 1.0
-                                    feat_vec[feat_lab, output[i]]   -= 1.0
-                                    feat_vec[feat_out, label]       += 1.0
-                                    feat_vec[feat_lab, label]       += 1.0
+                                    update_bigram_vect(feat_vec, avg_feat_vec, feat_out, feat_lab, output[i], label)
 
-                                    # update avg feature vector
-                                    avg_feat_vec[feat_out, output[i]]   -= 1.0
-                                    avg_feat_vec[feat_lab, output[i]]   -= 1.0
-                                    avg_feat_vec[feat_out, label]       += 1.0
-                                    avg_feat_vec[feat_lab, label]       += 1.0
+                            elif output[i] != label:                                
+                                update_unigram_vect(feat_vec, avg_feat_vec, feat, output[i],label)
 
-                                elif output[i-1] == label_pre and output[i] != label:
-
-                                    if feat in tau_feat_vec:
-                                        (js, ts) = tau_feat_vec[feat]
-                                        for tag in tagset:
-                                            if (feat, tag) in avg_feat_vec:
-                                                avg_feat_vec[feat, tag] = avg_feat_vec[feat, tag] + feat_vec[feat, tag] * (t*m + j - ts*m - js)
-
-
-                                    feat_vec[feat_lab, output[i]]   -= 2.0
-                                    feat_vec[feat_lab, label]       += 2.0
-
-                                    avg_feat_vec[feat_lab, output[i]]   -= 2.0
-                                    avg_feat_vec[feat_lab, label]       += 2.0
-                                    
-
-                                elif output[i-1] != label_pre and output[i] == label:
-                                    pass
-
-                                elif output[i-1] == label_pre and output[i] == label:
-                                    pass
-
-                            else: # for U00 to U22 feature
-
-                                if output[i] != label and feat in tau_feat_vec:
-                                    (js, ts) = tau_feat_vec[feat]
-                                    for tag in tagset:
-                                        if (feat, tag) in avg_feat_vec:
-                                            avg_feat_vec[feat, tag] = avg_feat_vec[feat, tag] + feat_vec[feat, tag] * (t*m + j - ts*m - js)
-
-
-                                feat_vec[feat, output[i]] -= 1.0
-                                feat_vec[feat, label] += 1.0
-
-                                avg_feat_vec[feat, output[i]] -= 1.0
-                                avg_feat_vec[feat, label] += 1.0
-
-
-                    else:  # for i==0 case, all the first word in each sentence
+                    else:  
+                        # for i==0 case, all the first word in each sentence
                         label_pre = 'B_-1'  # previous label will be denoted by B_-1
                         for feat in feats:
-                            if feat[0] == 'B':  # bigram feature case
+                            if feat[0] == 'B' and output[i] != label:  
+                                # bigram feature case
                                 feat = feat + ":" + label_pre
-                            
-                            if output[i] != label and feat in tau_feat_vec:
-                                (js, ts) = tau_feat_vec[feat]
-                                for tag in tagset:
-                                    if (feat, tag) in avg_feat_vec:
-                                        avg_feat_vec[feat, tag] = avg_feat_vec[feat, tag] + feat_vec[feat, tag] * (t*m + j - ts*m - js)
+                                update_bigram_vect(feat_vec, avg_feat_vec, feat, feat, output[i], label)
 
+                            elif output[i] != label:
+                                # for U00 to U22 feature
+                                update_unigram_vect(feat_vec, avg_feat_vec, feat, output[i],label)
 
-                            feat_vec[feat, output[i]] -= 1.0
-                            feat_vec[feat, label] += 1.0
-
-                            avg_feat_vec[feat, output[i]] -= 1.0
-                            avg_feat_vec[feat, label] += 1.0
-
-        mid_vec = copy.deepcopy(avg_feat_vec)
-        filename = 'mid_model_' + str(t + 1)
-        for key in mid_vec.keys():
-            mid_vec[key] = mid_vec[key]/float((t + 1)*m)
-        perc.perc_write_to_file(mid_vec, filename)
         # end of iteration
 
     # averaging perceptron
     for key in avg_feat_vec.keys():
         avg_feat_vec[key] = avg_feat_vec[key]/float(numepochs*m)
     # please limit the number of iterations of training to n iterations
+    perc.perc_write_to_file(feat_vec, 'model_feat_vec')
     return avg_feat_vec
 
 if __name__ == '__main__':
@@ -274,7 +229,6 @@ if __name__ == '__main__':
     optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
     # optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.dev"), help="input data, i.e. the x in \phi(x,y)")
     # optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.dev"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
-
     optparser.add_option("-e", "--numepochs", dest="numepochs", default=int(10), help="number of epochs of training; in each epoch we iterate over over all the training examples")
     optparser.add_option("-m", "--modelfile", dest="modelfile", default=os.path.join("data", "default.model"), help="weights for all features stored on disk")
     (opts, _) = optparser.parse_args()
