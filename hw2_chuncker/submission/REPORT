@@ -1,13 +1,33 @@
 # This submission file contains 3 different versions of implementation, which are based on different algorithms
 
-## Method 1 - baseline method(submitted)
+## Method 1 - Average perceptron with baseline method
 
-For the baseline method, we use the Viterbi Algorithm to imply the HMM. In each training, we use the exised model to predict the output. If the output is correct, we will award the features that result in that output. If the output is wrong, we will punish those features. As the result, the result will be relative accurate for the input data. 
-To improve the baseline, we add the awarding and punishment amount for bigram to 2. That rises our score by 1%.
-Besides, we modified the perc file to rule out the unmatched bigram condition (B-NP I-PP for example) and using the postag to predict unshown words. But the result for this modification does not get better, so we still rely on the origin perc file.
+For the baseline method, we use the Viterbi Algorithm to imply the HMM. In each training, we use the exised model to predict the output. If the output is correct, we will award the features that result in that output. If the output is wrong, we will punish those features.As the result, the result will be relative accurate for the input data. To improve the baseline, we adjust a little bit about the reward score as well as penalty. That rises our score by 1%.Besides, we modified the perc file to rule out the unmatched bigram condition (B-NP I-PP for example) and using the postag to predict unshown words. But the result for this modification does not get better, so we still rely on the origin perc file.
+
+To futher improve the method with a more stable result and decrease the overfitting effect, we use the average percptron method. The core idea of this method is showing as following:
+    * Avg_weight = 1 / (m * T) * Sum( weight[i, t] )
+        ** avg_weight is the output of this algorithm, 
+        ** m is the total number of sentence
+        ** T is the total number of iteration we take
+        ** weight[i, t] is the weight vector we get from the training result of iteration#t, sentence#i
+
+Here to reduce the time complexity as well as space complexity, we use the lazy update procedure proposed by Collins. It keeps a history vector to record when and where a feature is updated (e.g. histroy['U00:conference', 'B-NP'] = (1, 1) ). And every time it is updated again, first add the previous accumulated weight to the result weight vector and then update the histroy vector. At the final round of the sentence and iterations, make a total update to accumulate the all the result in histroy vector and get the accumulated result. Then divide it by the total number of iterations times total number of sentence in each iteration. The output is what we want.
+
+## Method 2 - Average perceptron with specialized data representation
+
+According to the paper "Voting between Multiple Data Representations for Text Chunking", we apply the specialized data representation method it mentioned. This specialized data representation is used to create more sub-categories of tags as well as part-of-speech tags and then classify the training data with those more specified categories. And here we use the SP+Lex-WCH strategy to keep the set of significant words.  
+
+The function we used to the the specification is as following:
+    * fs(<wi, pi, ti>) = / <wi, wi_pi, wi_pi_ti>,   if wi belongs to Ws
+                         \ <wi, pi, pi_ti>,         otherwise
+    ** wi = word, pi = part-of-speech tag, ti = tag
+    ** Ws contains words that belong to certain chunk types and which are higher than some frequency threshold. In our experiments we pick chunk types NP, VP, PP and ADVP (the most frequent chunk types) with a threshold of 50.
+
+And as usual, we also apply the averaged perceptron algorithm to this method to reduce the error introduced by overfitting. The algorithm of average perceptron is the same as previous method.
 
 
-## Method 2 - trigram viterbi algorithm(submitted)
+
+## Method 3 - Trigram viterbi algorithm
 
 The trigram method uses a 2 dimension viterbi algorithm with dynamic programing, and the perc_train algorithm is inherited from the baseline method. The detailed algorithm is as following:
 
@@ -24,14 +44,6 @@ function Viterbi():
     // The following part are similar to the original viterbi algorithm
 
 The performance of this trigram model is not good. It is extremely slow since it give N^3 time complexity. And the F1 score of testing set is similar to the improved baseline method within the first serveral iterations. Due to these reasons, we didn't apply this method in the end
-
-## Method 3 - Specialized Data Representation Method(not submiited)
-
-According to the paper "Voting between Multiple Data Representations for Text Chunking", we apply the specialized data representation method it mentioned. However, although it converges really fast and gives a high score for the first 3 iteration, the final result is still under the optimized baseline method.
-
-## Method 4 - Average perceptron algorithm(failed)
-
-Our code of this method fails with some bugs and which are hard to fix. 
 
 
 # Issues distribution
@@ -52,5 +64,5 @@ Our code of this method fails with some bugs and which are hard to fix.
 
 * Member name: Hexiang Hu
 ** Duty
-*** Implement Trigram method
-*** Research into multi dimension representation method
+*** Implement average perceptron method
+*** Implement specialized data representation method
