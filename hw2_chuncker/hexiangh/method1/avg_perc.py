@@ -48,16 +48,24 @@ def final_lazy_update_vect(tau_feat_vec, feat_vec, avg_feat_vec, t, j, m):
 
 
 def update_bigram_vect(feat_vec, avg_feat_vec, feat_out, feat_lab, output, label):
-    feat_vec[feat_out, output] -= 1.0
-    # feat_vec[feat_lab, output] -= 1.0
-    # feat_vec[feat_out, label] += 1.0
-    feat_vec[feat_lab, label] += 1.0
+    if feat_out != feat_lab:
+        feat_vec[feat_out, output] -= 1.0
+        feat_vec[feat_lab, output] -= 1.0
+        feat_vec[feat_out, label] += 1.0
+        feat_vec[feat_lab, label] += 1.0
 
-    # update avg feature vector
-    avg_feat_vec[feat_out, output] -= 1.0
-    # avg_feat_vec[feat_lab, output] -= 1.0
-    # avg_feat_vec[feat_out, label] += 1.0
-    avg_feat_vec[feat_lab, label] += 1.0
+        # update avg feature vector
+        avg_feat_vec[feat_out, output] -= 1.0
+        avg_feat_vec[feat_lab, output] -= 1.0
+        avg_feat_vec[feat_out, label] += 1.0
+        avg_feat_vec[feat_lab, label] += 1.0
+    else:
+        feat_vec[feat_out, output] -= 1.0
+        feat_vec[feat_lab, label] += 1.0
+
+        # update avg feature vector
+        avg_feat_vec[feat_out, output] -= 1.0
+        avg_feat_vec[feat_lab, label] += 1.0        
 
 
     # this function have equavalent effect to the following routine when feat_out = feat_lab 
@@ -119,19 +127,29 @@ def perc_train(train_data, tagset, numepochs):
                                 if output[i] != label:
 
                                     # laze update the tau vector value
-                                    lazy_update_vect(feat_out, output[i], tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
-                                    # lazy_update_vect(feat_out, label, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
-                                    # lazy_update_vect(feat_lab, label, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
-                                    lazy_update_vect(feat_lab, output[i], tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                    if feat_out != feat_lab:
+                                        lazy_update_vect(feat_out, output[i], tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                        lazy_update_vect(feat_out, label, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                        lazy_update_vect(feat_lab, label, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                        lazy_update_vect(feat_lab, output[i], tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                    else:
+                                        lazy_update_vect(feat_out, output[i], tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                        lazy_update_vect(feat_lab, label, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+
 
                                     # update original feature vector, if feat_out == feat_lab perform 2nd type updating
                                     update_bigram_vect(feat_vec, avg_feat_vec, feat_out, feat_lab, output[i], label)
 
                                     # if feat_out == feat_lab then update twice for the same tau
-                                    tau_feat_vec[feat_out, output[i]] = (j, t)
-                                    # tau_feat_vec[feat_out, label] = (j, t)
-                                    # tau_feat_vec[feat_lab, output[i]] = (j, t)
-                                    tau_feat_vec[feat_lab, label] = (j, t)
+                                    if feat_out != feat_lab:
+                                        tau_feat_vec[feat_out, output[i]] = (j, t)
+                                        tau_feat_vec[feat_out, label] = (j, t)
+                                        tau_feat_vec[feat_lab, output[i]] = (j, t)
+                                        tau_feat_vec[feat_lab, label] = (j, t)
+                                    else:
+                                        tau_feat_vec[feat_out, output[i]] = (j, t)
+                                        tau_feat_vec[feat_lab, label] = (j, t)
+
 
 
                             elif output[i] != label:
