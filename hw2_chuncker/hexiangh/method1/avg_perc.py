@@ -89,6 +89,11 @@ def perc_train(train_data, tagset, numepochs):
     for t in range(numepochs):
         print 'Iteration#',t,' is processing now.'
         for j, (labeled_list, feat_list) in enumerate(train_data):
+            print labeled_list
+            print '##################'
+            print feat_list
+            exit()
+
             labels = copy.deepcopy(labeled_list)
             print 'sentence[',j,']'
             # add in the start and end buffers for the context
@@ -202,7 +207,7 @@ def perc_train(train_data, tagset, numepochs):
 
                     else:  
                         # for i==0 case, all the first word in each sentence
-                        label_pre = 'B_-1'  # previous label will be denoted by B_-1
+                        label_pre = '_B-1'  # previous label will be denoted by B_-1
                         for feat in feats:
                             if feat[0] == 'B' and output[i] != label:  
                                 # bigram feature case
@@ -225,10 +230,10 @@ def perc_train(train_data, tagset, numepochs):
 if __name__ == '__main__':
     optparser = optparse.OptionParser()
     optparser.add_option("-t", "--tagsetfile", dest="tagsetfile", default=os.path.join("data", "tagset.txt"), help="tagset that contains all the labels produced in the output, i.e. the y in \phi(x,y)")
-    optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
-    optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
-    # optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.dev"), help="input data, i.e. the x in \phi(x,y)")
-    # optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.dev"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    # optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
+    # optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.dev"), help="input data, i.e. the x in \phi(x,y)")
+    optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.dev"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
     optparser.add_option("-e", "--numepochs", dest="numepochs", default=int(10), help="number of epochs of training; in each epoch we iterate over over all the training examples")
     optparser.add_option("-m", "--modelfile", dest="modelfile", default=os.path.join("data", "default.model"), help="weights for all features stored on disk")
     (opts, _) = optparser.parse_args()

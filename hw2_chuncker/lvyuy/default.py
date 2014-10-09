@@ -34,13 +34,14 @@ from collections import defaultdict
 
 def perc_train(train_data, tagset, numepochs):
     feat_vec = defaultdict(int)
+    # feat_vec = perc.perc_read_from_file('model_19');
     # insert your code here
     if len(tagset) <= 0:
         raise ValueError("Empty tagset")
 
-    numepochs = int(20)
+    numepochs = int(50)
     default_tag = tagset[0]
-    for t in range(numepochs):
+    for t in range(0, numepochs):
         print 'Iteration#',t,' is processing now.'
         for (labeled_list, feat_list) in train_data:
             labels = copy.deepcopy(labeled_list)
@@ -100,7 +101,11 @@ def perc_train(train_data, tagset, numepochs):
                         feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
                         feat_vec[feat, label] = feat_vec[feat, label] + 1
 
-        perc.perc_write_to_file(feat_vec, 'model_' + str(t))
+        if t % 5 == 0:
+            perc.perc_write_to_file(feat_vec, 'model_' + str(t))
+
+        perc.perc_write_to_file(feat_vec, 'model')
+        os.system('python perc.py -m model | python score-chunks.py')
 
     # please limit the number of iterations of training to n iterations
 

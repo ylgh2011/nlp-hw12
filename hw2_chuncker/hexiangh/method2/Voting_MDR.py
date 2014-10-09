@@ -16,7 +16,7 @@ def perc_train(train_data, tagset, numepochs, word_set):
     if len(tagset) <= 0:
         raise ValueError("Empty tagset")
 
-    numepochs = int(20)
+    numepochs = int(50)
     default_tag = tagset[0]
     for t in range(numepochs):
         tmp = 0
@@ -43,38 +43,85 @@ def perc_train(train_data, tagset, numepochs, word_set):
                 
                 fields = labels[i].split()
                 label = fields[2]
+
                 if i > 0: 
                     label_pre = labels[i-1].split()[2]
-                    if output[i-1] != label_pre or output[i] != label:
-                        for feat in feats:
-                            if feat[0] == 'B': 
-                            # for bigram feature
-                                feat_out = feat + ":" + output[i-1]  
-                                # feat_out is the "B:<previous output>"
-                                feat_lab = feat + ":" + label_pre  
-                                # feat_lab is the "B:<previous label>"
-                                # reward best condition
-
-                                feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
-
-                                # penalize condition
-                                feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
-                                
-                            else: 
-                            # for U00 to U22 feature
-                                feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
-                                feat_vec[feat, label] = feat_vec[feat, label] + 1
-                else:
-                    # for i==0 case, all the first word in each sentence
-                    label_pre = 'B_-1'  # previous label will be denoted by B_-1
                     for feat in feats:
-                        if feat[0] == 'B':  
-                        # bigram feature case
+                        if feat[0] == 'B': # for bigram feature
+                            feat_out = feat + ":" + output[i-1]  # feat_out is the "B:<previous output>"
+                            feat_lab = feat + ":" + label_pre  # feat_lab is the "B:<previous label>"
+
+                            if   output[i-1] != label_pre and output[i] != label:
+                                feat_vec[feat_out, output[i]]   -= 1
+                                feat_vec[feat_lab, output[i]]   -= 1
+                                feat_vec[feat_out, label]       += 1
+                                feat_vec[feat_lab, label]       += 1
+
+                            elif output[i-1] == label_pre and output[i] != label:
+                                feat_vec[feat_lab, output[i]]   -= 2
+                                feat_vec[feat_lab, label]       += 2
+
+                            elif output[i-1] != label_pre and output[i] == label:
+                                pass
+
+                            elif output[i-1] == label_pre and output[i] == label:
+                                pass
+
+                            # feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
+                            # feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+
+                            # feat_vec[feat_out, label] = feat_vec[feat_out, label] + 1
+                            # feat_vec[feat_lab, output[i]] = feat_vec[feat_lab, output[i]] - 1
+
+                        else: 
+                            # for U00 to U22 feature
+                            # if the condition is not right, there will be no penaulty and rewarding
+                            feat_vec[feat, output[i]] -= 1
+                            feat_vec[feat, label]     += 1
+                else:  # for i==0 case, all the first word in each sentence
+                    label_pre = '_B-1'  # previous label will be denoted by _B-1
+                    for feat in feats:
+                        if feat[0] == 'B':  # bigram feature case
                             feat = feat + ":" + label_pre
                         feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
                         feat_vec[feat, label] = feat_vec[feat, label] + 1
 
-        perc.perc_write_to_file(feat_vec, 'model_' + str(t))
+                # if i > 0: 
+                #     label_pre = labels[i-1].split()[2]
+                #     if output[i-1] != label_pre or output[i] != label:
+                #         for feat in feats:
+                #             if feat[0] == 'B': 
+                #             # for bigram feature
+                #                 feat_out = feat + ":" + output[i-1]  
+                #                 # feat_out is the "B:<previous output>"
+                #                 feat_lab = feat + ":" + label_pre  
+                #                 # feat_lab is the "B:<previous label>"
+                #                 # reward best condition
+
+                #                 feat_vec[feat_lab, label] = feat_vec[feat_lab, label] + 1
+
+                #                 # penalize condition
+                #                 feat_vec[feat_out, output[i]] = feat_vec[feat_out, output[i]] - 1
+                                
+                #             else: 
+                #             # for U00 to U22 feature
+                #                 feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
+                #                 feat_vec[feat, label] = feat_vec[feat, label] + 1
+                # else:
+                #     # for i==0 case, all the first word in each sentence
+                #     label_pre = '_B-1'  # previous label will be denoted by _B-1
+                #     for feat in feats:
+                #         if feat[0] == 'B':  
+                #         # bigram feature case
+                #             feat = feat + ":" + label_pre
+                #         feat_vec[feat, output[i]] = feat_vec[feat, output[i]] - 1
+                #         feat_vec[feat, label] = feat_vec[feat, label] + 1
+
+        if t % 3 == 0:
+            perc.perc_write_to_file(feat_vec, 'model_' + str(t))
+
+        perc.perc_write_to_file(feat_vec, 'model')
+        os.system('python perc.py -m model | python score-chunks.py')
 
     # please limit the number of iterations of training to n iterations
     return feat_vec
