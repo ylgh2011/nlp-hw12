@@ -15,9 +15,15 @@ git pull
 git checkout $localBranch
 [ $? -ne 0 ] && exit 1
 
+git stash
+[ $? -ne 0 ] && exit 1
 git rebase $remoteBranch
 [ $? -ne 0 ] && exit 1
 git push origin $localBranch:$remoteBranch
+[ $? -ne 0 ] && exit 1
+git stash apply
+[ $? -ne 0 ] && exit 1
+git stash drop
 [ $? -ne 0 ] && exit 1
 
 git checkout $remoteBranch
@@ -25,4 +31,7 @@ git checkout $remoteBranch
 git pull
 [ $? -ne 0 ] && exit 1
 git checkout $localBranch
+[ $? -ne 0 ] && exit 1
+
+echo "OK!"
 

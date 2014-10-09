@@ -26,3 +26,5 @@ git stash apply --index
 [ $? -ne 0 ] && exit 1
 git stash drop
 [ $? -ne 0 ] && exit 1
+
+echo "OK!"

@@ -49,14 +49,14 @@ def final_lazy_update_vect(tau_feat_vec, feat_vec, avg_feat_vec, t, j, m):
 
 def update_bigram_vect(feat_vec, avg_feat_vec, feat_out, feat_lab, output, label):
     feat_vec[feat_out, output] -= 1.0
-    feat_vec[feat_lab, output] -= 1.0
-    feat_vec[feat_out, label] += 1.0
+    # feat_vec[feat_lab, output] -= 1.0
+    # feat_vec[feat_out, label] += 1.0
     feat_vec[feat_lab, label] += 1.0
 
     # update avg feature vector
     avg_feat_vec[feat_out, output] -= 1.0
-    avg_feat_vec[feat_lab, output] -= 1.0
-    avg_feat_vec[feat_out, label] += 1.0
+    # avg_feat_vec[feat_lab, output] -= 1.0
+    # avg_feat_vec[feat_out, label] += 1.0
     avg_feat_vec[feat_lab, label] += 1.0
 
 
@@ -83,19 +83,15 @@ def perc_train(train_data, tagset, numepochs):
     if len(tagset) <= 0:
         raise ValueError("Empty tagset")
 
-    numepochs = int(3)
+    numepochs = int(8)
     default_tag = tagset[0]
     m = len(train_data) # length of training data
     for t in range(numepochs):
         print 'Iteration#',t,' is processing now.'
         for j, (labeled_list, feat_list) in enumerate(train_data):
-            print labeled_list
-            print '##################'
-            print feat_list
-            exit()
 
             labels = copy.deepcopy(labeled_list)
-            print 'sentence[',j,']'
+            # print 'sentence[',j,']'
             # add in the start and end buffers for the context
             # for every sentence in the training set, iterate numepochs times
             output = perc.perc_test(feat_vec, labeled_list, feat_list, tagset, default_tag)
@@ -124,8 +120,8 @@ def perc_train(train_data, tagset, numepochs):
 
                                     # laze update the tau vector value
                                     lazy_update_vect(feat_out, output[i], tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
-                                    lazy_update_vect(feat_out, label, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
-                                    lazy_update_vect(feat_lab, label, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                    # lazy_update_vect(feat_out, label, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
+                                    # lazy_update_vect(feat_lab, label, tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
                                     lazy_update_vect(feat_lab, output[i], tau_feat_vec, feat_vec, avg_feat_vec, t, j, m)
 
                                     # update original feature vector, if feat_out == feat_lab perform 2nd type updating
@@ -133,8 +129,8 @@ def perc_train(train_data, tagset, numepochs):
 
                                     # if feat_out == feat_lab then update twice for the same tau
                                     tau_feat_vec[feat_out, output[i]] = (j, t)
-                                    tau_feat_vec[feat_out, label] = (j, t)
-                                    tau_feat_vec[feat_lab, output[i]] = (j, t)
+                                    # tau_feat_vec[feat_out, label] = (j, t)
+                                    # tau_feat_vec[feat_lab, output[i]] = (j, t)
                                     tau_feat_vec[feat_lab, label] = (j, t)
 
 
@@ -151,7 +147,7 @@ def perc_train(train_data, tagset, numepochs):
 
 
                     else:  # for i==0 case, all the first word in each sentence
-                        label_pre = 'B_-1'  # previous label will be denoted by B_-1
+                        label_pre = '_B-2'  # previous label will be denoted by _B-2
                         for feat in feats:
                             if feat[0] == 'B' and output[i] != label:
                                 # bigram feature case
@@ -207,7 +203,7 @@ def perc_train(train_data, tagset, numepochs):
 
                     else:  
                         # for i==0 case, all the first word in each sentence
-                        label_pre = '_B-1'  # previous label will be denoted by B_-1
+                        label_pre = '_B-1'  # previous label will be denoted by _B-2
                         for feat in feats:
                             if feat[0] == 'B' and output[i] != label:  
                                 # bigram feature case
@@ -230,10 +226,10 @@ def perc_train(train_data, tagset, numepochs):
 if __name__ == '__main__':
     optparser = optparse.OptionParser()
     optparser.add_option("-t", "--tagsetfile", dest="tagsetfile", default=os.path.join("data", "tagset.txt"), help="tagset that contains all the labels produced in the output, i.e. the y in \phi(x,y)")
-    # optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
-    # optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
-    optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.dev"), help="input data, i.e. the x in \phi(x,y)")
-    optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.dev"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.txt.gz"), help="input data, i.e. the x in \phi(x,y)")
+    optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
+    # optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.dev"), help="input data, i.e. the x in \phi(x,y)")
+    # optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.dev"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
     optparser.add_option("-e", "--numepochs", dest="numepochs", default=int(10), help="number of epochs of training; in each epoch we iterate over over all the training examples")
     optparser.add_option("-m", "--modelfile", dest="modelfile", default=os.path.join("data", "default.model"), help="weights for all features stored on disk")
     (opts, _) = optparser.parse_args()
