@@ -1,8 +1,8 @@
 # This submission file contains 3 different versions of implementation, which are based on different algorithms
 
-## Method 1 - Average perceptron with baseline method
+## Method 1 - Average perceptron with baseline method (Highest Score)
 
-For the baseline method, we use the Viterbi Algorithm to imply the HMM. In each training, we use the exised model to predict the output. If the output is correct, we will award the features that result in that output. If the output is wrong, we will punish those features.As the result, the result will be relative accurate for the input data. To improve the baseline, we adjust a little bit about the reward score as well as penalty. That rises our score by 1%.Besides, we modified the perc file to rule out the unmatched bigram condition (B-NP I-PP for example) and using the postag to predict unshown words. But the result for this modification does not get better, so we still rely on the origin perc file.
+For the baseline method, we use Viterbi Algorithm to apply the HMM. In each training iteration, we use the existing model to predict the output. If the output is correct, we will reward the corresponding features, otherwise, penalize them. As the result, the result will be relative accurate for the input data. To improve the baseline, we added the weights to award and penalize the bigram feature, which increases our score by 1%. In addition, we modified the perc file to rule out the unmatched bigram condition (B-NP I-PP for example) and using the postag to predict unshown words. But the result for this modification does not get better, so we still rely on the origin perc file.
 
 To futher improve the method with a more stable result and decrease the overfitting effect, we use the average percptron method. The core idea of this method is showing as following:
     * Avg_weight = 1 / (m * T) * Sum( weight[i, t] )
@@ -17,7 +17,7 @@ Here to reduce the time complexity as well as space complexity, we use the lazy 
          python perc.py -m model > output
          python score-chunks.py -t output 
 
-## Method 2 - Average perceptron with specialized data representation
+## Method 2 - Average perceptron with specialized data representation (Average Performance)
 
 According to the paper "Voting between Multiple Data Representations for Text Chunking", we apply the specialized data representation method it mentioned. This specialized data representation is used to create more sub-categories of tags as well as part-of-speech tags and then classify the training data with those more specified categories. And here we use the SP+Lex-WCH strategy to keep the set of significant words.  
 
@@ -33,7 +33,7 @@ And as usual, we also apply the averaged perceptron algorithm to this method to 
          python perc.py -m model > output
          python score-chunks.py -t output
 
-## Method 3 - Trigram viterbi algorithm
+## Method 3 - Trigram viterbi algorithm (Poor Performance)
 
 The trigram method uses a 2 dimension viterbi algorithm with dynamic programing, and the perc_train algorithm is inherited from the baseline method. The detailed algorithm is as following:
 
