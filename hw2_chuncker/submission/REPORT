@@ -13,6 +13,10 @@ To futher improve the method with a more stable result and decrease the overfitt
 
 Here to reduce the time complexity as well as space complexity, we use the lazy update procedure proposed by Collins. It keeps a history vector to record when and where a feature is updated (e.g. histroy['U00:conference', 'B-NP'] = (1, 1) ). And every time it is updated again, first add the previous accumulated weight to the result weight vector and then update the histroy vector. At the final round of the sentence and iterations, make a total update to accumulate the all the result in histroy vector and get the accumulated result. Then divide it by the total number of iterations times total number of sentence in each iteration. The output is what we want.
 
+[Usage]: python avg_baseline.py -m model
+         python perc.py -m model > output
+         python score-chunks.py -t output 
+
 ## Method 2 - Average perceptron with specialized data representation
 
 According to the paper "Voting between Multiple Data Representations for Text Chunking", we apply the specialized data representation method it mentioned. This specialized data representation is used to create more sub-categories of tags as well as part-of-speech tags and then classify the training data with those more specified categories. And here we use the SP+Lex-WCH strategy to keep the set of significant words.  
@@ -25,7 +29,9 @@ The function we used to the the specification is as following:
 
 And as usual, we also apply the averaged perceptron algorithm to this method to reduce the error introduced by overfitting. The algorithm of average perceptron is the same as previous method.
 
-
+[Usage]: python spec_avg_perc.py -m model 
+         python perc.py -m model > output
+         python score-chunks.py -t output
 
 ## Method 3 - Trigram viterbi algorithm
 
@@ -45,7 +51,10 @@ function Viterbi():
 
 The performance of this trigram model is not good. It is extremely slow since it give N^3 time complexity. And the F1 score of testing set is similar to the improved baseline method within the first serveral iterations. Due to these reasons, we didn't apply this method in the end
 
-
+[Usage]: python trigram_method.py -m model 
+         python perc.py -m model > output
+         python score-chunks.py -t output
+         
 # Issues distribution
 * Member name: Lyuyu Ye
 ** Duty
