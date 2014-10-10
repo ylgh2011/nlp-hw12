@@ -47,12 +47,12 @@ def final_lazy_update_vect(tau_feat_vec, feat_vec, avg_feat_vec, t, j, m):
 
 
 def update_bigram_vect(feat_vec, avg_feat_vec, feat_out, feat_lab, output, label):
-    feat_vec[feat_out, output] -= 1.0
-    feat_vec[feat_lab, label] += 1.0
+    feat_vec[feat_out, output] -= 1.5
+    feat_vec[feat_lab, label] += 1.5
 
     # update avg feature vector
-    avg_feat_vec[feat_out, output] -= 1.0
-    avg_feat_vec[feat_lab, label] += 1.0        
+    avg_feat_vec[feat_out, output] -= 1.5
+    avg_feat_vec[feat_lab, label] += 1.5       
 
 
 def update_unigram_vect(feat_vec, avg_feat_vec, feat, output,label):
@@ -66,6 +66,9 @@ def perc_train(train_data, tagset, numepochs, word_set):
     feat_vec = defaultdict(float)
     avg_feat_vec = defaultdict(float)
     tau_feat_vec = dict()
+
+    epochs = int(3)
+    print >> "Since we found that iteration #3 gives the best result, here we choose iteration# = 3"
 
     # insert your code here
     if len(tagset) <= 0:
@@ -211,7 +214,7 @@ if __name__ == '__main__':
     optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.gz"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
     # optparser.add_option("-i", "--trainfile", dest="trainfile", default=os.path.join("data", "train.dev"), help="input data, i.e. the x in \phi(x,y)")
     # optparser.add_option("-f", "--featfile", dest="featfile", default=os.path.join("data", "train.feats.dev"), help="precomputed features for the input data, i.e. the values of \phi(x,_) without y")
-    optparser.add_option("-e", "--numepochs", dest="numepochs", default=int(10), help="number of epochs of training; in each epoch we iterate over over all the training examples")
+    optparser.add_option("-e", "--numepochs", dest="numepochs", default=int(3), help="number of epochs of training; in each epoch we iterate over over all the training examples")
     optparser.add_option("-m", "--modelfile", dest="modelfile", default=os.path.join("data", "default.model"), help="weights for all features stored on disk")
     optparser.add_option("-w", "--wordsetfile", dest="wordsetfile", default=os.path.join("data", "word_set"), help="the word set write to disk")
     (opts, _) = optparser.parse_args()
